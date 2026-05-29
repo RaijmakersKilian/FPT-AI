@@ -8,6 +8,7 @@ from rich.console import Console
 from .classification import IdentitySegmentClassifier
 from .config import PipelineConfig
 from .pipeline import run_image_pipeline, run_video_pipeline
+from .roi import Sam3ConstructionRoiDetector
 from .segmentation import ClassicalSegmenter, Sam3TextPromptSegmenter
 
 
@@ -23,18 +24,21 @@ def main() -> None:
     video_parser.add_argument("--output", type=Path, required=True)
     video_parser.add_argument("--config", type=Path)
     video_parser.add_argument("--sample-every", type=int)
+    video_parser.add_argument("--roi", choices=["none", "sam3-construction"], default="none")
 
     image_parser = subparsers.add_parser("run-image", help="Run pipeline from one image")
     image_parser.add_argument("--image", type=Path, required=True)
     image_parser.add_argument("--output", type=Path, required=True)
     image_parser.add_argument("--config", type=Path)
     image_parser.add_argument("--segmenter", choices=["classical", "sam3"], default="classical")
+    image_parser.add_argument("--roi", choices=["none", "sam3-construction"], default="none")
 
     images_parser = subparsers.add_parser("run-images", help="Run pipeline from an image folder")
     images_parser.add_argument("--images", type=Path, required=True)
     images_parser.add_argument("--output", type=Path, required=True)
     images_parser.add_argument("--config", type=Path)
     images_parser.add_argument("--segmenter", choices=["classical", "sam3"], default="classical")
+    images_parser.add_argument("--roi", choices=["none", "sam3-construction"], default="none")
 
     args = parser.parse_args()
     config = _load_config(args.config)
@@ -50,7 +54,12 @@ def main() -> None:
         )
 
     if args.command == "run-video":
-        report = run_video_pipeline(args.video, args.output, config)
+        report = run_video_pipeline(
+            args.video,
+            args.output,
+            config,
+            roi_detector=_build_roi_detector(args.roi),
+        )
     elif args.command == "run-image":
         segmenter, classifier = _build_segmentation_stack(args.segmenter)
         report = run_image_pipeline(
@@ -59,6 +68,7 @@ def main() -> None:
             config,
             segmenter=segmenter,
             classifier=classifier,
+            roi_detector=_build_roi_detector(args.roi),
             inputs={"image": str(args.image)},
         )
     elif args.command == "run-images":
@@ -74,6 +84,7 @@ def main() -> None:
             config,
             segmenter=segmenter,
             classifier=classifier,
+            roi_detector=_build_roi_detector(args.roi),
             inputs={"images": str(args.images)},
         )
     else:
@@ -92,6 +103,12 @@ def _build_segmentation_stack(name: str):
     if name == "sam3":
         return Sam3TextPromptSegmenter(), IdentitySegmentClassifier()
     return ClassicalSegmenter(), None
+
+
+def _build_roi_detector(name: str):
+    if name == "sam3-construction":
+        return Sam3ConstructionRoiDetector()
+    return None
 
 
 if __name__ == "__main__":

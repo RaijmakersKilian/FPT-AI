@@ -106,6 +106,26 @@ The current SAM3 prompts are in `src/ftp_ai/segmentation.py`:
 - `bridge support column`
 - `construction equipment`
 
+## Construction ROI Mode
+
+SAM3 is currently strongest at finding the work zone with the broad prompt
+`construction site`. Use ROI mode to crop the drone frame to that area before
+running the rest of the pipeline:
+
+```powershell
+python -m ftp_ai.cli run-image `
+  --image outputs/dvc_27122023/keyframes/frame_00000000.jpg `
+  --output outputs/roi_test `
+  --roi sam3-construction
+```
+
+The output folder includes:
+
+- `analysis_image.jpg`: image after basic preprocessing
+- `roi_mask.jpg`: SAM3 mask for the construction site
+- `roi_image.jpg`: cropped region used for progress estimation
+- `annotated.jpg`: segmentation result on the cropped ROI
+
 ## Current Classes
 
 The baseline progress classes are:
