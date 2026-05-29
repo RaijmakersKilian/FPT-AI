@@ -1,0 +1,16 @@
+{
+  "project_name": "GOT Bridge",
+  "sample_every_n_frames": 10,
+  "blur_threshold": 120.0,
+  "motion_threshold": 0.015,
+  "target_keyframes": 400,
+  "sections": 12,
+  "weights": {
+    "completed_deck": 1.0,
+    "support_column": 0.8,
+    "formwork": 0.35,
+    "exposed_rebar": 0.2,
+    "equipment": 0.0,
+    "unknown": 0.0
+  }
+}
