@@ -1,0 +1,18 @@
+Metadata-Version: 2.4
+Name: ftp-ai
+Version: 0.1.0
+Summary: AI pipeline prototype for GOT bridge construction progress monitoring.
+Requires-Python: >=3.10
+Requires-Dist: numpy>=1.26
+Requires-Dist: opencv-python>=4.9
+Requires-Dist: pillow>=10.0
+Requires-Dist: pydantic>=2.7
+Requires-Dist: rich>=13.7
+Provides-Extra: api
+Requires-Dist: fastapi>=0.111; extra == "api"
+Requires-Dist: uvicorn[standard]>=0.30; extra == "api"
+Provides-Extra: ifc
+Requires-Dist: ifcopenshell>=0.8; extra == "ifc"
+Provides-Extra: dev
+Requires-Dist: pytest>=8.2; extra == "dev"
+Requires-Dist: ruff>=0.5; extra == "dev"

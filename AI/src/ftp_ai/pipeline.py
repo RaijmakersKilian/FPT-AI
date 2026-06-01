@@ -6,7 +6,7 @@ from .classification import RuleBasedSegmentClassifier, SegmentClassifier
 from .config import PipelineConfig
 from .models import ProgressReport
 from .panorama import stitch_images
-from .preprocess import crop_black_borders
+from .preprocess import crop_black_borders, resize_to_max_dimension
 from .progress import estimate_progress
 from .report import write_annotated_image, write_json_report
 from .roi import RoiDetector
@@ -21,6 +21,7 @@ def run_video_pipeline(
     segmenter: Segmenter | None = None,
     classifier: SegmentClassifier | None = None,
     roi_detector: RoiDetector | None = None,
+    analysis_max_dimension: int | None = None,
 ) -> ProgressReport:
     keyframes = extract_keyframes(
         video_path=video_path,
@@ -40,6 +41,7 @@ def run_video_pipeline(
         segmenter=segmenter,
         classifier=classifier,
         roi_detector=roi_detector,
+        analysis_max_dimension=analysis_max_dimension,
         inputs={"video": str(video_path), "keyframes": str(output_dir / "keyframes")},
     )
 
@@ -51,11 +53,18 @@ def run_image_pipeline(
     segmenter: Segmenter | None = None,
     classifier: SegmentClassifier | None = None,
     roi_detector: RoiDetector | None = None,
+    analysis_max_dimension: int | None = None,
     inputs: dict[str, str] | None = None,
 ) -> ProgressReport:
     output_dir.mkdir(parents=True, exist_ok=True)
     panorama_path = stitch_images(image_paths, output_dir / "panorama.jpg")
     analysis_path = crop_black_borders(panorama_path, output_dir / "analysis_image.jpg")
+    if analysis_max_dimension is not None:
+        analysis_path = resize_to_max_dimension(
+            analysis_path,
+            output_dir / "analysis_image_resized.jpg",
+            analysis_max_dimension,
+        )
     roi_inputs: dict[str, str] = {}
 
     if roi_detector is not None:

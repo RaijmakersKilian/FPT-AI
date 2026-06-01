@@ -126,6 +126,91 @@ The output folder includes:
 - `roi_image.jpg`: cropped region used for progress estimation
 - `annotated.jpg`: segmentation result on the cropped ROI
 
+## Batch ROI Analysis
+
+Use this to produce several demo examples from the extracted keyframes. The
+command selects a spread of frames across the folder, runs ROI analysis on each,
+and writes a `summary.json`.
+
+```powershell
+python -m ftp_ai.cli run-roi-batch `
+  --images outputs/dvc_27122023/keyframes `
+  --output outputs/roi_batch_demo `
+  --limit 8
+```
+
+Each selected frame gets its own output folder containing `roi_image.jpg`,
+`annotated.jpg`, and `report.json`.
+
+## Full-Video Panorama Segmentation
+
+For bridge-only drone flights, create one large panorama from selected frames and
+run progress segmentation on the panorama. SAM3 needs a resized analysis image on
+8 GB GPUs, so cap the analysis dimension:
+
+```powershell
+python -m ftp_ai.cli run-video `
+  --video data/raw/BridgeVid1-271223.mp4 `
+  --output outputs/bridgevid1_panorama_progress `
+  --sample-every 120 `
+  --segmenter sam3-progress `
+  --analysis-max-dimension 1800
+```
+
+Key outputs:
+
+- `panorama.jpg`: stitched bridge panorama
+- `analysis_image_resized.jpg`: panorama resized for SAM3
+- `annotated.jpg`: progress segmentation on the panorama
+- `report.json`: section-level prototype progress report
+
+If the normal `run-video` command produces a grid/contact-sheet image, build a
+strict smooth panorama from the extracted keyframes:
+
+```powershell
+python -m ftp_ai.cli build-panorama `
+  --images outputs/bridgevid1_panorama_progress/keyframes `
+  --output outputs/bridgevid1_smooth_panorama/panorama.jpg
+```
+
+There is also an experimental neighboring-frame strip mode:
+
+```powershell
+python -m ftp_ai.cli build-panorama `
+  --images outputs/bridgevid1_panorama_progress/keyframes `
+  --output outputs/bridgevid1_strip_panorama/panorama.jpg `
+  --method strip
+```
+
+Important: this is still not a true orthomosaic. Apple-style panoramas work best
+when the camera rotates from one position. A drone fly-over translates through a
+3D scene, so trees, buildings, roads, and the bridge move differently. For a
+real map-like "one total picture", use photogrammetry/orthomosaic software such
+as OpenDroneMap, COLMAP, or a MASt3R/Dust3R-based reconstruction workflow.
+
+## SAM3 Progress Segmentation
+
+For the bridge footage, SAM3 responds better to construction-state prompts than
+to detailed BIM terms like `rebar` or `bridge deck`. Use the progress preset on a
+cropped ROI image:
+
+```powershell
+python -m ftp_ai.cli run-image `
+  --image outputs/bridgevid1_roi_batch/002_frame_00000660/roi_image.jpg `
+  --output outputs/sam3_progress_demo `
+  --segmenter sam3-progress
+```
+
+The preset maps these prompts to progress labels:
+
+- `road surface` -> `completed_deck`
+- `bridge construction`, `unfinished construction`, `construction formwork` -> `formwork`
+- `construction equipment`, `crane` -> `equipment`
+
+The preset applies stricter filtering than raw SAM3: tiny masks are removed,
+overlapping masks are deduplicated, and annotations only draw the most useful
+progress labels so the demo image stays readable.
+
 ## Current Classes
 
 The baseline progress classes are:

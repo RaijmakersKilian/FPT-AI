@@ -34,15 +34,11 @@ class Sam3ConstructionRoiDetector:
         self.prompt = prompt
         self.min_score = min_score
         self.expansion_ratio = expansion_ratio
+        self._segmenter: Sam3TextPromptSegmenter | None = None
 
     def detect(self, image_path: Path, output_dir: Path) -> RoiResult | None:
-        segmenter = Sam3TextPromptSegmenter(
-            prompts={SegmentLabel.UNKNOWN: self.prompt},
-            min_score=self.min_score,
-            max_segments_per_prompt=5,
-        )
         try:
-            segments = segmenter.segment(image_path)
+            segments = self._get_segmenter().segment(image_path)
         finally:
             _empty_cuda_cache()
 
@@ -78,6 +74,15 @@ class Sam3ConstructionRoiDetector:
             prompt=self.prompt,
             confidence=best.confidence,
         )
+
+    def _get_segmenter(self) -> Sam3TextPromptSegmenter:
+        if self._segmenter is None:
+            self._segmenter = Sam3TextPromptSegmenter(
+                prompts={SegmentLabel.UNKNOWN: self.prompt},
+                min_score=self.min_score,
+                max_segments_per_prompt=5,
+            )
+        return self._segmenter
 
 
 def _expand_bbox(

@@ -9,6 +9,9 @@ import numpy as np
 from .models import Segment, SegmentLabel
 
 
+Sam3PromptSpec = dict[SegmentLabel, str | list[str]] | list[tuple[SegmentLabel, str]]
+
+
 DEFAULT_SAM3_PROMPTS: dict[SegmentLabel, str] = {
     SegmentLabel.COMPLETED_DECK: "bridge deck",
     SegmentLabel.FORMWORK: "construction formwork",
@@ -16,6 +19,18 @@ DEFAULT_SAM3_PROMPTS: dict[SegmentLabel, str] = {
     SegmentLabel.SUPPORT_COLUMN: "bridge column",
     SegmentLabel.EQUIPMENT: "construction equipment",
 }
+
+SAM3_PROGRESS_PROMPTS: list[tuple[SegmentLabel, str]] = [
+    (SegmentLabel.COMPLETED_DECK, "bridge deck"),
+    (SegmentLabel.COMPLETED_DECK, "concrete bridge deck"),
+    (SegmentLabel.COMPLETED_DECK, "finished bridge deck"),
+    (SegmentLabel.FORMWORK, "bridge construction"),
+    (SegmentLabel.FORMWORK, "unfinished construction"),
+    (SegmentLabel.FORMWORK, "construction formwork"),
+    (SegmentLabel.FORMWORK, "bridge girders"),
+    (SegmentLabel.EQUIPMENT, "construction equipment"),
+    (SegmentLabel.EQUIPMENT, "crane"),
+]
 
 
 class Segmenter(Protocol):
@@ -100,15 +115,19 @@ class Sam3TextPromptSegmenter:
 
     def __init__(
         self,
-        prompts: dict[SegmentLabel, str] | None = None,
+        prompts: Sam3PromptSpec | None = None,
         min_score: float = 0.2,
         max_segments_per_prompt: int = 20,
         resolution: int = 1008,
+        min_area_ratio: float = 0.002,
+        nms_iou_threshold: float = 0.6,
     ) -> None:
-        self.prompts = prompts or DEFAULT_SAM3_PROMPTS
+        self.prompts = _normalize_prompts(prompts or DEFAULT_SAM3_PROMPTS)
         self.min_score = min_score
         self.max_segments_per_prompt = max_segments_per_prompt
         self.resolution = resolution
+        self.min_area_ratio = min_area_ratio
+        self.nms_iou_threshold = nms_iou_threshold
         self._processor = None
 
     def segment(self, image_path: Path) -> list[Segment]:
@@ -118,8 +137,10 @@ class Sam3TextPromptSegmenter:
         with autocast_context:
             inference_state = processor.set_image(image)
 
+        width, height = image.size
+        min_area = int(width * height * self.min_area_ratio)
         segments: list[Segment] = []
-        for label, prompt in self.prompts.items():
+        for label, prompt in self.prompts:
             with autocast_context:
                 output = processor.set_text_prompt(state=inference_state, prompt=prompt)
             masks = self._to_numpy(output.get("masks"))
@@ -131,7 +152,7 @@ class Sam3TextPromptSegmenter:
                     continue
                 binary_mask = mask.astype(bool)
                 area = int(binary_mask.sum())
-                if area == 0:
+                if area < min_area:
                     continue
                 segments.append(
                     Segment(
@@ -148,7 +169,7 @@ class Sam3TextPromptSegmenter:
                     break
             self._empty_cuda_cache()
 
-        return segments
+        return _dedupe_segments(segments, self.nms_iou_threshold)
 
     def _get_processor(self):
         if self._processor is not None:
@@ -254,3 +275,34 @@ def _load_local_env() -> None:
             value = value.strip().strip('"').strip("'")
             if key and key not in os.environ:
                 os.environ[key] = value
+
+
+def _normalize_prompts(prompts: Sam3PromptSpec) -> list[tuple[SegmentLabel, str]]:
+    if isinstance(prompts, list):
+        return prompts
+
+    normalized: list[tuple[SegmentLabel, str]] = []
+    for label, value in prompts.items():
+        if isinstance(value, list):
+            normalized.extend((label, prompt) for prompt in value)
+        else:
+            normalized.append((label, value))
+    return normalized
+
+
+def _dedupe_segments(segments: list[Segment], iou_threshold: float) -> list[Segment]:
+    kept: list[Segment] = []
+    for segment in sorted(segments, key=lambda item: item.confidence * item.area, reverse=True):
+        if any(_mask_iou(segment.mask, existing.mask) >= iou_threshold for existing in kept):
+            continue
+        segment.id = len(kept)
+        kept.append(segment)
+    return kept
+
+
+def _mask_iou(first: np.ndarray, second: np.ndarray) -> float:
+    intersection = np.logical_and(first, second).sum()
+    if intersection == 0:
+        return 0.0
+    union = np.logical_or(first, second).sum()
+    return float(intersection / max(1, union))
