@@ -8,7 +8,16 @@
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="Dashboard.css">
+<script type="importmap">
+{
+  "imports": {
+    "three": "https://cdn.jsdelivr.net/npm/three@0.160.1/build/three.module.js",
+    "three/addons/": "https://cdn.jsdelivr.net/npm/three@0.160.1/examples/jsm/"
+  }
+}
+</script>
 <script src="thumbnails.js" defer></script>
+<script type="module" src="viewer.js"></script>
 </head>
 
 <body>
@@ -144,68 +153,27 @@
           <span><i class="dot d-none"></i>Not Started</span>
         </div>
       </div>
-      <div class="bim-stage">
-        <svg viewBox="0 0 640 460" xmlns="http://www.w3.org/2000/svg">
-          <defs>
-            <linearGradient id="floorG" x1="0" y1="0" x2="0" y2="1">
-              <stop offset="0" stop-color="#4a5b86"/><stop offset="1" stop-color="#2c3a5e"/>
-            </linearGradient>
-          </defs>
-          <!-- ground slab (isometric) -->
-          <polygon points="120,360 470,250 620,330 270,440" fill="url(#floorG)" opacity=".55"/>
-          <polygon points="120,360 470,250 470,265 120,375" fill="#3a4a72" opacity=".4"/>
 
-          <!-- ===== PIERS / COLUMNS ===== -->
-          <!-- helper: each pier drawn as 3 faces -->
-          <!-- Orange pier (in progress) -->
-          <g>
-            <polygon points="250,360 270,353 270,300 250,307" fill="#d97e0e"/>
-            <polygon points="270,353 292,360 292,307 270,300" fill="#f59e0b"/>
-            <polygon points="250,307 270,300 292,307 272,314" fill="#ffb838"/>
-          </g>
-          <!-- Orange pier 2 -->
-          <g>
-            <polygon points="300,343 320,336 320,283 300,290" fill="#d97e0e"/>
-            <polygon points="320,336 342,343 342,290 320,283" fill="#f59e0b"/>
-            <polygon points="300,290 320,283 342,290 322,297" fill="#ffb838"/>
-          </g>
+      <div class="bim-controls">
+        <span class="bim-path-label">Map: <code>XR/IFC_Files/</code></span>
+        <label class="bim-load-btn" for="ifc-file-input">
+          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
+          IFC laden
+          <input id="ifc-file-input" type="file" accept=".ifc,.glb,.gltf" hidden>
+        </label>
+      </div>
 
-          <!-- Green piers (completed) -->
-          <g>
-            <polygon points="362,326 382,319 382,255 362,262" fill="#179a4a"/>
-            <polygon points="382,319 404,326 404,262 382,255" fill="#22c55e"/>
-            <polygon points="362,262 382,255 404,262 384,269" fill="#4ade80"/>
-          </g>
-          <g>
-            <polygon points="412,311 432,304 432,242 412,249" fill="#179a4a"/>
-            <polygon points="432,304 454,311 454,249 432,242" fill="#22c55e"/>
-            <polygon points="412,249 432,242 454,249 434,256" fill="#4ade80"/>
-          </g>
-          <g>
-            <polygon points="462,296 482,289 482,228 462,235" fill="#179a4a"/>
-            <polygon points="482,289 504,296 504,235 482,228" fill="#22c55e"/>
-            <polygon points="462,235 482,228 504,235 484,242" fill="#4ade80"/>
-          </g>
-
-          <!-- ===== DECK BEAMS ===== -->
-          <!-- blue deck girder (not started) -->
-          <g>
-            <polygon points="262,300 470,236 470,250 262,314" fill="#3b6fd4"/>
-            <polygon points="262,300 470,236 488,243 280,307" fill="#5b8de8"/>
-            <polygon points="470,236 488,243 488,257 470,250" fill="#2f5bb0"/>
-          </g>
-          <!-- green completed top beam -->
-          <g>
-            <polygon points="372,258 504,218 504,230 372,270" fill="#1f9f49"/>
-            <polygon points="372,258 504,218 520,225 388,265" fill="#34c95f"/>
-            <polygon points="504,218 520,225 520,237 504,230" fill="#178a3d"/>
-          </g>
-          <!-- small green cap right -->
-          <g>
-            <polygon points="486,232 540,215 540,226 486,243" fill="#1f9f49"/>
-            <polygon points="486,232 540,215 554,221 500,238" fill="#34c95f"/>
-          </g>
-        </svg>
+      <div id="bim-viewport" class="bim-viewport">
+        <canvas id="bim-canvas"></canvas>
+        <div id="bim-loading" class="bim-loading" style="display:none">
+          <div class="bim-spinner"></div>
+          <span>IFC laden...</span>
+        </div>
+        <div id="bim-placeholder" class="bim-placeholder">
+          <svg width="52" height="52" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.2"><path d="M12 2 2 7l10 5 10-5-10-5Z"/><path d="m2 17 10 5 10-5"/><path d="m2 12 10 5 10-5"/></svg>
+          <p>Geen IFC bestand geladen</p>
+          <p class="bim-path-hint">Folder: <code>XR/IFC_Files/</code></p>
+        </div>
       </div>
     </div>
   </section>
