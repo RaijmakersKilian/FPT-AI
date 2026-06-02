@@ -38,7 +38,6 @@ async function initViewer() {
   fill.position.set(-40, 20, -30);
   scene.add(fill);
 
-
   // Controls
   const controls = new OrbitControls(camera, renderer.domElement);
   controls.enableDamping = true;
@@ -56,7 +55,6 @@ async function initViewer() {
       const gltf = await gltfLoader.loadAsync(url);
       if (currentModel) scene.remove(currentModel);
       currentModel = gltf.scene;
-      // Corrigeer Z-up exportoriëntatie naar Y-up (Three.js standaard)
       currentModel.rotation.x = -Math.PI / 2;
       scene.add(currentModel);
       fitCamera(currentModel, camera, controls);
@@ -106,11 +104,7 @@ function fitCamera(model, camera, controls) {
   const center = box.getCenter(new THREE.Vector3());
   const size = box.getSize(new THREE.Vector3());
   const maxDim = Math.max(size.x, size.y, size.z);
-  camera.position.set(
-    center.x + maxDim * 1.5,
-    center.y + maxDim,
-    center.z + maxDim * 1.5
-  );
+  camera.position.set(center.x + maxDim * 1.5, center.y + maxDim, center.z + maxDim * 1.5);
   controls.target.copy(center);
   controls.update();
 }
