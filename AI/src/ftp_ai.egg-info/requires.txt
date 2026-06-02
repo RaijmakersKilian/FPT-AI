@@ -1,0 +1,16 @@
+numpy>=1.26
+opencv-python>=4.9
+pillow>=10.0
+pydantic>=2.7
+rich>=13.7
+
+[api]
+fastapi>=0.111
+uvicorn[standard]>=0.30
+
+[dev]
+pytest>=8.2
+ruff>=0.5
+
+[ifc]
+ifcopenshell>=0.8

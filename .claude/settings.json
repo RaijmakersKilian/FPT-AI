@@ -1,0 +1,14 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(where python *)",
+      "Bash(python -c \"import sys; print\\(sys.executable\\)\")",
+      "Bash(C:\\\\Users\\\\kilia\\\\AppData\\\\Local\\\\Programs\\\\Python\\\\Python312\\\\python.exe -c \"import torch; print\\('torch', torch.__version__, 'CUDA', torch.cuda.is_available\\(\\)\\)\")",
+      "PowerShell(& \"C:\\\\Users\\\\kilia\\\\AppData\\\\Local\\\\Programs\\\\Python\\\\Python312\\\\python.exe\" -c \"import torch; print\\('torch', torch.__version__, 'CUDA', torch.cuda.is_available\\(\\)\\)\")",
+      "PowerShell(& \"C:\\\\Users\\\\kilia\\\\AppData\\\\Local\\\\Programs\\\\Python\\\\Python312\\\\python.exe\" -m ftp_ai.cli build-dust3r-3d --help 2>&1)",
+      "PowerShell(& \"C:\\\\Users\\\\kilia\\\\AppData\\\\Local\\\\Programs\\\\Python\\\\Python312\\\\Scripts\\\\ftp-ai.exe\" build-dust3r-3d --help 2>&1)",
+      "PowerShell(& \"C:\\\\Users\\\\kilia\\\\AppData\\\\Local\\\\Programs\\\\Python\\\\Python312\\\\Scripts\\\\pip.exe\" install \"git+https://github.com/naver/mast3r.git\" 2>&1)",
+      "PowerShell(& \"C:\\\\Users\\\\kilia\\\\AppData\\\\Local\\\\Programs\\\\Python\\\\Python312\\\\Scripts\\\\pip.exe\" install scikit-learn roma einops trimesh huggingface-hub 2>&1)"
+    ]
+  }
+}
