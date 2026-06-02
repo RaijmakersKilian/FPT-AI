@@ -54,10 +54,9 @@
     flex-shrink:0;
   }
   .brand{display:flex;align-items:center;gap:2px;}
-  .brand .logo-fpt{
-    font-size:24px;font-weight:800;letter-spacing:-.5px;color:var(--accent-blue);
-  }
-  .brand .logo-mark{margin-left:1px;}
+  .brand .logo-fpt{display:none;}
+  .brand .logo-mark{display:none;}
+  .brand .logo-img{height:34px;width:auto;display:block;}
 
   .project-select{
     display:flex;align-items:center;gap:14px;
