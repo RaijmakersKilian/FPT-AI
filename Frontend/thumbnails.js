@@ -36,7 +36,52 @@ if (initial) {
   if (idx >= 0) activateThumbnail(initial, idx);
 }
 
-// Export button (placeholder)
-document.querySelector('.export-btn').addEventListener('click', () => {
-  alert('Export options: PDF report · Excel · IFC snapshot');
+// Export dropdown
+const exportMenu = document.getElementById('export-menu');
+const exportBtn = document.getElementById('export-btn');
+const exportOptions = document.querySelectorAll('.export-option');
+
+function closeExportMenu() {
+  if (!exportMenu || !exportBtn) return;
+  exportMenu.classList.remove('open');
+  exportBtn.setAttribute('aria-expanded', 'false');
+}
+
+function toggleExportMenu() {
+  if (!exportMenu || !exportBtn) return;
+  const isOpen = exportMenu.classList.contains('open');
+  if (isOpen) {
+    closeExportMenu();
+  } else {
+    exportMenu.classList.add('open');
+    exportBtn.setAttribute('aria-expanded', 'true');
+  }
+}
+
+if (exportBtn) {
+  exportBtn.addEventListener('click', (event) => {
+    event.stopPropagation();
+    toggleExportMenu();
+  });
+}
+
+exportOptions.forEach((option) => {
+  option.addEventListener('click', (event) => {
+    event.stopPropagation();
+    const format = option.dataset.format || 'unknown';
+    closeExportMenu();
+    alert(`Export as ${format.toUpperCase()} will be connected to the database later.`);
+  });
+});
+
+document.addEventListener('click', (event) => {
+  if (exportMenu && !exportMenu.contains(event.target)) {
+    closeExportMenu();
+  }
+});
+
+document.addEventListener('keydown', (event) => {
+  if (event.key === 'Escape') {
+    closeExportMenu();
+  }
 });
