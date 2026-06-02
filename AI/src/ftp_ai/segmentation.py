@@ -9,6 +9,9 @@ import numpy as np
 from .models import Segment, SegmentLabel
 
 
+Sam3PromptSpec = dict[SegmentLabel, str | list[str]] | list[tuple[SegmentLabel, str]]
+
+
 DEFAULT_SAM3_PROMPTS: dict[SegmentLabel, str] = {
     SegmentLabel.COMPLETED_DECK: "bridge deck",
     SegmentLabel.FORMWORK: "construction formwork",
@@ -16,6 +19,43 @@ DEFAULT_SAM3_PROMPTS: dict[SegmentLabel, str] = {
     SegmentLabel.SUPPORT_COLUMN: "bridge column",
     SegmentLabel.EQUIPMENT: "construction equipment",
 }
+
+SAM3_PROGRESS_PROMPTS: list[tuple[SegmentLabel, str]] = [
+    (SegmentLabel.COMPLETED_DECK, "bridge deck"),
+    (SegmentLabel.COMPLETED_DECK, "concrete bridge deck"),
+    (SegmentLabel.COMPLETED_DECK, "finished bridge deck"),
+    (SegmentLabel.FORMWORK, "bridge construction"),
+    (SegmentLabel.FORMWORK, "unfinished construction"),
+    (SegmentLabel.FORMWORK, "construction formwork"),
+    (SegmentLabel.FORMWORK, "bridge girders"),
+    (SegmentLabel.EQUIPMENT, "construction equipment"),
+    (SegmentLabel.EQUIPMENT, "crane"),
+]
+
+SAM3_OBJECT_PROMPTS: list[tuple[SegmentLabel, str]] = [
+    (SegmentLabel.UNKNOWN, "bridge deck"),
+    (SegmentLabel.UNKNOWN, "concrete slab"),
+    (SegmentLabel.UNKNOWN, "bridge girder"),
+    (SegmentLabel.UNKNOWN, "bridge column"),
+    (SegmentLabel.UNKNOWN, "construction formwork"),
+    (SegmentLabel.UNKNOWN, "scaffolding"),
+    (SegmentLabel.UNKNOWN, "steel rebar"),
+    (SegmentLabel.UNKNOWN, "construction material"),
+    (SegmentLabel.UNKNOWN, "barrier"),
+    (SegmentLabel.UNKNOWN, "traffic cone"),
+    (SegmentLabel.UNKNOWN, "crane"),
+    (SegmentLabel.UNKNOWN, "excavator"),
+    (SegmentLabel.UNKNOWN, "construction equipment"),
+    (SegmentLabel.UNKNOWN, "truck"),
+    (SegmentLabel.UNKNOWN, "bus"),
+    (SegmentLabel.UNKNOWN, "car"),
+    (SegmentLabel.UNKNOWN, "motorbike"),
+    (SegmentLabel.UNKNOWN, "person"),
+    (SegmentLabel.UNKNOWN, "road"),
+    (SegmentLabel.UNKNOWN, "tree"),
+    (SegmentLabel.UNKNOWN, "building"),
+    (SegmentLabel.UNKNOWN, "water"),
+]
 
 
 class Segmenter(Protocol):
@@ -73,21 +113,106 @@ class ClassicalSegmenter:
 
 
 class Sam2AutomaticSegmenter:
-    """Adapter placeholder for SAM2 automatic mask generation.
+    """SAM2 automatic mask generator for dense object-like segmentation.
 
-    The repository intentionally does not vendor model weights. Wire this class to
-    the installed SAM2 package/checkpoint when the team has the model available.
+    Requires the optional `sam2` package and a SAM2 checkpoint/config. Configure
+    paths with `SAM2_CHECKPOINT` and `SAM2_MODEL_CFG` in `.env`.
     """
 
-    def __init__(self, checkpoint_path: Path, model_config: Path | None = None) -> None:
+    def __init__(
+        self,
+        checkpoint_path: Path | None = None,
+        model_config: str | None = None,
+        points_per_side: int = 32,
+        pred_iou_thresh: float = 0.76,
+        stability_score_thresh: float = 0.86,
+        min_area_ratio: float = 0.0004,
+        max_segments: int = 120,
+    ) -> None:
         self.checkpoint_path = checkpoint_path
         self.model_config = model_config
+        self.points_per_side = points_per_side
+        self.pred_iou_thresh = pred_iou_thresh
+        self.stability_score_thresh = stability_score_thresh
+        self.min_area_ratio = min_area_ratio
+        self.max_segments = max_segments
+        self._generator = None
 
     def segment(self, image_path: Path) -> list[Segment]:
-        raise NotImplementedError(
-            "SAM2 is not configured yet. Use ClassicalSegmenter for the baseline, "
-            "or implement this adapter with the team's SAM2 checkpoint."
+        cv2 = _import_cv2()
+        image = cv2.imread(str(image_path))
+        if image is None:
+            raise ValueError(f"Could not load image: {image_path}")
+
+        height, width = image.shape[:2]
+        min_area = int(height * width * self.min_area_ratio)
+        rgb_image = cv2.cvtColor(image, cv2.COLOR_BGR2RGB)
+        masks = self._get_generator().generate(rgb_image)
+        masks = sorted(
+            masks,
+            key=lambda item: float(item.get("predicted_iou", 0.0)) * int(item.get("area", 0)),
+            reverse=True,
         )
+
+        segments: list[Segment] = []
+        for item in masks:
+            mask = np.asarray(item.get("segmentation"), dtype=bool)
+            area = int(item.get("area", int(mask.sum())))
+            if area < min_area:
+                continue
+            x, y, w, h = [int(value) for value in item.get("bbox", (0, 0, 0, 0))]
+            confidence = float(item.get("predicted_iou", item.get("stability_score", 0.0)))
+            segments.append(
+                Segment(
+                    id=len(segments),
+                    mask=mask,
+                    bbox_xyxy=(x, y, x + w, y + h),
+                    area=area,
+                    label=SegmentLabel.UNKNOWN,
+                    confidence=confidence,
+                    metadata={
+                        "source": "sam2_auto",
+                        "display_label": "object",
+                        "stability_score": float(item.get("stability_score", 0.0)),
+                    },
+                )
+            )
+            if len(segments) >= self.max_segments:
+                break
+        return _dedupe_segments(segments, iou_threshold=0.72)
+
+    def _get_generator(self):
+        if self._generator is not None:
+            return self._generator
+
+        _load_local_env()
+        checkpoint_path = self.checkpoint_path or _env_path("SAM2_CHECKPOINT")
+        model_config = self.model_config or os.environ.get("SAM2_MODEL_CFG")
+        if checkpoint_path is None or model_config is None:
+            raise RuntimeError(
+                "SAM2 automatic segmentation needs SAM2_CHECKPOINT and SAM2_MODEL_CFG "
+                "in AI/.env. See README.md for setup."
+            )
+
+        try:
+            import torch
+            from sam2.automatic_mask_generator import SAM2AutomaticMaskGenerator  # type: ignore
+            from sam2.build_sam import build_sam2  # type: ignore
+        except ImportError as exc:
+            raise RuntimeError(
+                "SAM2 is not installed. Install Meta's sam2 package before using "
+                "`--segmenter sam2-auto`."
+            ) from exc
+
+        device = "cuda" if torch.cuda.is_available() else "cpu"
+        model = build_sam2(model_config, str(checkpoint_path), device=device)
+        self._generator = SAM2AutomaticMaskGenerator(
+            model,
+            points_per_side=self.points_per_side,
+            pred_iou_thresh=self.pred_iou_thresh,
+            stability_score_thresh=self.stability_score_thresh,
+        )
+        return self._generator
 
 
 class Sam3TextPromptSegmenter:
@@ -100,15 +225,21 @@ class Sam3TextPromptSegmenter:
 
     def __init__(
         self,
-        prompts: dict[SegmentLabel, str] | None = None,
+        prompts: Sam3PromptSpec | None = None,
         min_score: float = 0.2,
         max_segments_per_prompt: int = 20,
         resolution: int = 1008,
+        min_area_ratio: float = 0.002,
+        nms_iou_threshold: float = 0.6,
+        source_name: str = "sam3_text_prompt",
     ) -> None:
-        self.prompts = prompts or DEFAULT_SAM3_PROMPTS
+        self.prompts = _normalize_prompts(prompts or DEFAULT_SAM3_PROMPTS)
         self.min_score = min_score
         self.max_segments_per_prompt = max_segments_per_prompt
         self.resolution = resolution
+        self.min_area_ratio = min_area_ratio
+        self.nms_iou_threshold = nms_iou_threshold
+        self.source_name = source_name
         self._processor = None
 
     def segment(self, image_path: Path) -> list[Segment]:
@@ -118,8 +249,11 @@ class Sam3TextPromptSegmenter:
         with autocast_context:
             inference_state = processor.set_image(image)
 
+        width, height = image.size
+        min_area = int(width * height * self.min_area_ratio)
         segments: list[Segment] = []
-        for label, prompt in self.prompts.items():
+        for label, prompt in self.prompts:
+            prompt_count = 0
             with autocast_context:
                 output = processor.set_text_prompt(state=inference_state, prompt=prompt)
             masks = self._to_numpy(output.get("masks"))
@@ -131,7 +265,7 @@ class Sam3TextPromptSegmenter:
                     continue
                 binary_mask = mask.astype(bool)
                 area = int(binary_mask.sum())
-                if area == 0:
+                if area < min_area:
                     continue
                 segments.append(
                     Segment(
@@ -141,14 +275,19 @@ class Sam3TextPromptSegmenter:
                         area=area,
                         label=label,
                         confidence=float(score),
-                        metadata={"source": "sam3_text_prompt", "prompt": prompt},
+                        metadata={
+                            "source": self.source_name,
+                            "prompt": prompt,
+                            "display_label": prompt.replace(" ", "_"),
+                        },
                     )
                 )
-                if len([segment for segment in segments if segment.label == label]) >= self.max_segments_per_prompt:
+                prompt_count += 1
+                if prompt_count >= self.max_segments_per_prompt:
                     break
             self._empty_cuda_cache()
 
-        return segments
+        return _dedupe_segments(segments, self.nms_iou_threshold)
 
     def _get_processor(self):
         if self._processor is not None:
@@ -254,3 +393,39 @@ def _load_local_env() -> None:
             value = value.strip().strip('"').strip("'")
             if key and key not in os.environ:
                 os.environ[key] = value
+
+
+def _env_path(key: str) -> Path | None:
+    value = os.environ.get(key)
+    return Path(value) if value else None
+
+
+def _normalize_prompts(prompts: Sam3PromptSpec) -> list[tuple[SegmentLabel, str]]:
+    if isinstance(prompts, list):
+        return prompts
+
+    normalized: list[tuple[SegmentLabel, str]] = []
+    for label, value in prompts.items():
+        if isinstance(value, list):
+            normalized.extend((label, prompt) for prompt in value)
+        else:
+            normalized.append((label, value))
+    return normalized
+
+
+def _dedupe_segments(segments: list[Segment], iou_threshold: float) -> list[Segment]:
+    kept: list[Segment] = []
+    for segment in sorted(segments, key=lambda item: item.confidence * item.area, reverse=True):
+        if any(_mask_iou(segment.mask, existing.mask) >= iou_threshold for existing in kept):
+            continue
+        segment.id = len(kept)
+        kept.append(segment)
+    return kept
+
+
+def _mask_iou(first: np.ndarray, second: np.ndarray) -> float:
+    intersection = np.logical_and(first, second).sum()
+    if intersection == 0:
+        return 0.0
+    union = np.logical_or(first, second).sum()
+    return float(intersection / max(1, union))
