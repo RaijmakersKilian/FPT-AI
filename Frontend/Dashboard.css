@@ -91,7 +91,7 @@
   /* ============ GRID ============ */
   .grid-top{
     display:grid;
-    grid-template-columns:1fr 1.05fr;
+    grid-template-columns:1fr 1.35fr;
     grid-template-rows:1fr;
     gap:14px;
     margin-bottom:14px;
@@ -128,16 +128,27 @@
   /* ---- Video card ---- */
   .video-frame{
     border-radius:10px;overflow:hidden;position:relative;
-    background:#cdd6e4;flex:1;min-height:0;
+    background:#cdd6e4;flex:1;min-height:0;display:flex;align-items:center;justify-content:center;
   }
   .video-frame svg{display:block;width:100%;height:100%;}
+
+  .video-frame video{
+    width:100%;
+    height:100%;
+    display:block;
+    object-fit:cover;
+    background:#000;
+  }
 
   /* ---- Timeline archive ---- */
   .thumbs{display:grid;grid-template-columns:repeat(5,1fr);gap:14px;}
   .thumb{display:flex;flex-direction:column;align-items:center;gap:8px;}
   .thumb .frame{
-    width:100%;aspect-ratio:1.25/1;background:#dfe4ec;border-radius:8px;
-    transition:transform .15s ease,box-shadow .15s ease;cursor:pointer;
+    width:100%;aspect-ratio:1.25/1;background:#dfe4ec;border-radius:8px;overflow:hidden;
+    transition:transform .15s ease,box-shadow .15s ease;cursor:pointer;display:flex;align-items:center;justify-content:center;
+  }
+  .thumb .frame .thumb-video{
+    width:100%;height:100%;display:block;object-fit:cover;border-radius:8px;pointer-events:none;
   }
   .thumb.active .frame{box-shadow:0 0 0 2px var(--accent-blue);}
   .thumb .frame:hover{transform:translateY(-2px);box-shadow:0 0 0 2px var(--card-border-hi);}

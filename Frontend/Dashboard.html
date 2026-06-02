@@ -54,64 +54,12 @@
       <div class="card">
         <div class="card-head">
           <span class="ic"><svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><path d="M14 2v6h6"/></svg></span>
-          <span class="card-title">Video: DVC5543210</span>
+          <span class="card-title" id="main-video-title">Video: DVC5543210</span>
         </div>
         <div class="video-frame">
           <!-- Stylised aerial cityscape -->
-          <svg viewBox="0 0 560 315" preserveAspectRatio="xMidYMid slice" xmlns="http://www.w3.org/2000/svg">
-            <defs>
-              <linearGradient id="sky" x1="0" y1="0" x2="0" y2="1">
-                <stop offset="0" stop-color="#bcd2e6"/><stop offset="1" stop-color="#d9e4ee"/>
-              </linearGradient>
-              <linearGradient id="road" x1="0" y1="0" x2="0" y2="1">
-                <stop offset="0" stop-color="#c9cdd2"/><stop offset="1" stop-color="#aeb4bb"/>
-              </linearGradient>
-            </defs>
-            <rect width="560" height="315" fill="#d4ddd0"/>
-            <!-- haze sky strip -->
-            <rect width="560" height="120" fill="url(#sky)"/>
-            <!-- distant skyline -->
-            <g fill="#9fb0c0">
-              <rect x="20" y="60" width="26" height="62"/><rect x="52" y="74" width="20" height="48"/>
-              <rect x="78" y="50" width="30" height="72"/><rect x="116" y="68" width="22" height="54"/>
-              <rect x="146" y="44" width="34" height="78"/><rect x="188" y="62" width="24" height="60"/>
-              <rect x="218" y="54" width="20" height="68"/><rect x="360" y="58" width="30" height="64"/>
-              <rect x="396" y="46" width="26" height="76"/><rect x="430" y="66" width="22" height="56"/>
-              <rect x="458" y="52" width="30" height="70"/><rect x="494" y="62" width="24" height="60"/>
-              <rect x="524" y="48" width="28" height="74"/>
-            </g>
-            <g fill="#b7c3d0">
-              <rect x="40" y="80" width="14" height="42"/><rect x="100" y="86" width="12" height="36"/>
-              <rect x="240" y="70" width="22" height="52"/><rect x="268" y="84" width="16" height="38"/>
-              <rect x="412" y="78" width="14" height="44"/><rect x="480" y="82" width="12" height="40"/>
-            </g>
-            <!-- green land -->
-            <rect y="118" width="560" height="200" fill="#bcc9a8"/>
-            <ellipse cx="120" cy="210" rx="120" ry="80" fill="#9fb38a"/>
-            <ellipse cx="470" cy="250" rx="150" ry="100" fill="#aabd92"/>
-            <!-- diagonal road -->
-            <polygon points="300,118 330,118 250,315 150,315" fill="url(#road)"/>
-            <polygon points="300,118 308,118 240,315 222,315" fill="#e2e6ea" opacity=".5"/>
-            <!-- lane dashes -->
-            <g stroke="#f2f3f5" stroke-width="3" stroke-dasharray="10 12" opacity=".8">
-              <line x1="299" y1="125" x2="232" y2="310"/>
-            </g>
-            <!-- trees -->
-            <g fill="#6f8f5a">
-              <circle cx="70" cy="180" r="16"/><circle cx="95" cy="200" r="13"/><circle cx="55" cy="210" r="14"/>
-              <circle cx="420" cy="190" r="15"/><circle cx="450" cy="210" r="18"/><circle cx="400" cy="220" r="12"/>
-              <circle cx="510" cy="180" r="14"/><circle cx="350" cy="240" r="16"/>
-            </g>
-            <!-- foreground houses -->
-            <g>
-              <rect x="20" y="250" width="70" height="55" fill="#caa37e"/>
-              <polygon points="18,250 55,228 92,250" fill="#8d6a4d"/>
-              <rect x="100" y="262" width="60" height="50" fill="#b7956f"/>
-              <polygon points="98,262 130,242 162,262" fill="#7d5d42"/>
-            </g>
-            <!-- subtle vignette -->
-            <rect width="560" height="315" fill="url(#sky)" opacity="0"/>
-          </svg>
+            <video id="main-video" controls muted src="/Frontend/Video's/Kopie van DJI_0066.MP4.mp4"></video>
+          
         </div>
       </div>
 
@@ -121,11 +69,26 @@
           <span class="card-title">Video timeline archive</span>
         </div>
         <div class="thumbs" id="thumbs">
-          <div class="thumb"><div class="frame"></div><div class="date">October 21</div></div>
-          <div class="thumb"><div class="frame"></div><div class="date">October 22</div></div>
-          <div class="thumb active"><div class="frame"></div><div class="date">October 24</div></div>
-          <div class="thumb"><div class="frame"></div><div class="date">October 28</div></div>
-          <div class="thumb"><div class="frame"></div><div class="date">October 29</div></div>
+          <div class="thumb" data-src="/Frontend/Video's/Kopie van DJI_0066.MP4.mp4" data-name="DJI_0066">
+            <div class="frame"><video class="thumb-video" muted playsinline preload="metadata" src="/Frontend/Video's/Kopie van DJI_0066.MP4.mp4"></video></div>
+            <div class="date">October 21</div>
+          </div>
+          <div class="thumb" data-src="/Frontend/Video's/Kopie van DJI_0072.MP4.mp4" data-name="DJI_0072">
+            <div class="frame"><video class="thumb-video" muted playsinline preload="metadata" src="/Frontend/Video's/Kopie van DJI_0072.MP4.mp4"></video></div>
+            <div class="date">October 22</div>
+          </div>
+          <div class="thumb active" data-src="/Frontend/Video's/Kopie van DVC 23102024.MP4" data-name="DVC 23102024">
+            <div class="frame"><video class="thumb-video" muted playsinline preload="metadata" src="/Frontend/Video's/Kopie van DVC 23102024.MP4"></video></div>
+            <div class="date">October 24</div>
+          </div>
+          <div class="thumb" data-src="/Frontend/Video's/Kopie van AP 08-12-2025.MP4.mp4" data-name="AP 08-12-2025">
+            <div class="frame"><video class="thumb-video" muted playsinline preload="metadata" src="/Frontend/Video's/Kopie van AP 08-12-2025.MP4.mp4"></video></div>
+            <div class="date">October 28</div>
+          </div>
+          <div class="thumb" data-src="/Frontend/Video's/Copy of Kopie van AP 08-12-2025.MP4.mp4" data-name="AP 08-12-2025 (copy)">
+            <div class="frame"><video class="thumb-video" muted playsinline preload="metadata" src="/Frontend/Video's/Copy of Kopie van AP 08-12-2025.MP4.mp4"></video></div>
+            <div class="date">October 29</div>
+          </div>
         </div>
         <div class="dots">
           <i></i><i></i><i class="on"></i><i></i><i></i>
