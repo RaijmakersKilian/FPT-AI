@@ -203,13 +203,129 @@ python -m ftp_ai.cli run-image `
 
 The preset maps these prompts to progress labels:
 
-- `road surface` -> `completed_deck`
-- `bridge construction`, `unfinished construction`, `construction formwork` -> `formwork`
+- `bridge deck`, `concrete bridge deck`, `finished bridge deck` -> `completed_deck`
+- `bridge construction`, `unfinished construction`, `construction formwork`, `bridge girders` -> `formwork`
 - `construction equipment`, `crane` -> `equipment`
 
 The preset applies stricter filtering than raw SAM3: tiny masks are removed,
 overlapping masks are deduplicated, and annotations only draw the most useful
 progress labels so the demo image stays readable.
+
+## SAM3 Object Segmentation
+
+Use this mode when you want visual object discovery instead of progress scoring.
+It asks SAM3 for many object concepts such as bridge deck, slab, girder, crane,
+truck, person, road, tree, building, and water, then draws the detected instances
+with unique colors.
+
+```powershell
+python -m ftp_ai.cli run-image `
+  --image outputs/keep/bridgevid1_sam3_progress_vivid/analysis_image.jpg `
+  --output outputs/bridgevid1_sam3_objects_demo `
+  --segmenter sam3-objects `
+  --analysis-max-dimension 1400
+```
+
+The `overall_completion` value in this mode is not meaningful, because the
+segments are generic objects rather than progress classes.
+
+Dense object modes draw thinner boxes, smaller labels, and lighter masks than
+progress mode so the image stays easier to inspect.
+
+## SAM2 Segment Everything
+
+SAM2 has an automatic mask generator that can segment many unlabeled regions
+without text prompts. This is a better experiment for "segment everything" than
+SAM3 text prompts, but it needs the optional SAM2 package and checkpoint.
+
+Expected `.env` values:
+
+```text
+SAM2_CHECKPOINT=models/sam2.1_hiera_large.pt
+SAM2_MODEL_CFG=configs/sam2.1/sam2.1_hiera_l.yaml
+```
+
+Run it with:
+
+```powershell
+python -m ftp_ai.cli run-image `
+  --image outputs/keep/bridgevid1_sam3_progress_vivid/analysis_image.jpg `
+  --output outputs/bridgevid1_sam2_auto_demo `
+  --segmenter sam2-auto `
+  --analysis-max-dimension 1400
+```
+
+SAM2 automatic masks are unlabeled, so the output labels are shown as `object`.
+Use this to inspect whether dense segmentation is useful. Do not use its
+`overall_completion` value as real progress.
+
+## Sparse 3D Proof Of Concept
+
+Use this to generate a small two-view point cloud from bridge drone footage. It
+is useful for the interim presentation because it proves the footage can support
+3D reconstruction, but it is not a complete metric bridge model.
+
+```powershell
+python -m ftp_ai.cli build-sparse-3d `
+  --video data/raw/Bridgevid2-271223.mp4 `
+  --output outputs/interim_3d_bridgevid2_pair_600_720 `
+  --frame-a 600 `
+  --frame-b 720 `
+  --max-dimension 1280 `
+  --max-points 6000
+```
+
+The output folder contains:
+
+- `sparse_point_cloud.ply`: colored sparse point cloud
+- `pointcloud_preview.jpg`: 2D preview of the point cloud
+- `matches_preview.jpg`: matched features between the two frames
+- `metrics.json`: match counts, inliers, reprojection error, and limitations
+
+For a real bridge model, the next step is a full photogrammetry or SLAM pipeline
+such as COLMAP, OpenDroneMap, Meshroom, or MASt3R/Dust3R.
+
+## COLMAP Mesh Reconstruction
+
+Use this to turn a bridge-only drone video segment into a dense point cloud and
+mesh. This requires the CUDA-enabled COLMAP binary; the no-CUDA binary can run
+sparse reconstruction but cannot run dense stereo.
+
+Successful interim command:
+
+```powershell
+python -m ftp_ai.cli build-colmap-mesh `
+  --video data/raw/Bridgevid2-271223.mp4 `
+  --output outputs/colmap_mesh_bridgevid2_s22_full `
+  --colmap-path .external/colmap/cuda/bin/colmap.exe `
+  --frame-interval 0.25 `
+  --start-seconds 22 `
+  --max-frames 32 `
+  --blur-threshold 35 `
+  --max-image-size 900 `
+  --matcher exhaustive
+```
+
+Result from this run:
+
+- input frames: 32
+- registered images: 32
+- sparse points: 25739
+- dense vertices: 178539
+- mesh vertices: 12672
+- mesh faces: 23118
+
+Key outputs:
+
+- `sparse_point_cloud.ply`: sparse SfM point cloud
+- `dense_point_cloud.ply`: dense fused point cloud
+- `mesh.ply`: reconstructed 3D mesh
+- `summary.json`: reconstruction metrics and output paths
+- `logs/`: COLMAP logs per step
+
+Open `mesh.ply` in Blender, MeshLab, CloudCompare, or Windows 3D Viewer. The
+mesh is not yet a clean BIM model: scale is arbitrary without camera calibration
+or GPS/IMU, and moving traffic/background geometry can still be reconstructed.
 
 ## Current Classes
 

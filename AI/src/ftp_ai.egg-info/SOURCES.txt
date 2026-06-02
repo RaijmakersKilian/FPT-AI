@@ -10,6 +10,7 @@ src/ftp_ai/panorama.py
 src/ftp_ai/pipeline.py
 src/ftp_ai/preprocess.py
 src/ftp_ai/progress.py
+src/ftp_ai/reconstruction.py
 src/ftp_ai/report.py
 src/ftp_ai/roi.py
 src/ftp_ai/segmentation.py
