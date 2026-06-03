@@ -1,10 +1,15 @@
 from fastapi import APIRouter, HTTPException, status
 
+from app.schemas.frame_extraction_schema import (
+    ExtractFramesRequest,
+    ExtractFramesResponse,
+)
 from app.schemas.processing_schema import (
     ProcessingRunCreate,
     ProcessingRunResponse,
     ProcessingRunUpdate,
 )
+from app.services.frame_extraction_service import extract_frames
 from app.services.processing_service import (
     create_processing_run,
     delete_processing_run,
@@ -56,3 +61,11 @@ def delete_processing_run_endpoint(processing_run_id: str):
             status_code=status.HTTP_404_NOT_FOUND,
             detail="Processing run not found",
         )
+
+
+@router.post( "/{run_id}/extract-frames", response_model=ExtractFramesResponse)
+def extract_frames_endpoint(
+    run_id: str,
+    params: ExtractFramesRequest = ExtractFramesRequest(),
+):
+    return extract_frames(run_id, params)
