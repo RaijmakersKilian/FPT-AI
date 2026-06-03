@@ -6,7 +6,7 @@ from app.schemas.report_schema import (
     ProgressReportUpdate,
 )
 from app.services.report_service import (
-    create_progress_report,
+    create_progress_report_with_pdf,
     delete_progress_report,
     get_all_progress_reports,
     get_progress_report_by_id,
@@ -34,7 +34,11 @@ def read_progress_report(report_id: str):
 
 @router.post("", response_model=ProgressReportResponse, status_code=status.HTTP_201_CREATED)
 def create_new_progress_report(data: ProgressReportCreate):
-    return create_progress_report(data)
+    """
+    Create a progress report. A PDF is automatically generated and saved
+    to storage/reports_pdf/, and the file path is stored in the pdf_path field.
+    """
+    return create_progress_report_with_pdf(data)
 
 
 @router.patch("/{report_id}", response_model=ProgressReportResponse)
