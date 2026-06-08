@@ -4,6 +4,7 @@ from app.routers.video_router import router as video_router
 from app.routers.processing_router import router as processing_router
 from app.routers.report_router import router as report_router
 from app.routers.element_type_router import router as element_type_router
+from app.routers.detected_element_router import router as detected_element_router
 
 app = FastAPI(
     title="FPT AI Construction Progress API",
@@ -30,3 +31,4 @@ app.include_router(video_router, prefix="/videos", tags=["Videos"])
 app.include_router(processing_router, prefix="/processing-runs", tags=["Processing Runs"])
 app.include_router(report_router, prefix="/reports", tags=["Reports"])
 app.include_router(element_type_router, prefix="/element-types", tags=["Element Types"])
+app.include_router(detected_element_router, prefix="/detected-elements", tags=["Detected Elements"])
