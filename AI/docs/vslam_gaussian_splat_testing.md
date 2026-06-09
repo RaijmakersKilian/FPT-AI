@@ -96,6 +96,56 @@ This is not trained 3D Gaussian Splatting. It is a splat-compatible seed where
 each sampled point becomes one isotropic gaussian. Real 3DGS should train from
 images and camera poses, ideally using COLMAP camera outputs.
 
+## Video-First Gaussian Splat Seed Test
+
+To avoid manually starting from an existing point cloud, a video-first command
+was added. It extracts frames from the MP4, runs COLMAP sparse reconstruction,
+and converts the resulting reconstruction into a splat seed.
+
+Command tested on `BridgeVid1-271223.mp4`:
+
+```powershell
+$env:PYTHONPATH="AI/src"
+
+AI\.venv-sam3\Scripts\python.exe -m ftp_ai.cli video-to-gaussian-splat `
+  --video AI\data\raw\BridgeVid1-271223.mp4 `
+  --output AI\outputs\video_gaussian_splat_bridgevid1_fast `
+  --colmap-path AI\.external\colmap\nocuda\bin\colmap.exe `
+  --frame-interval 1.0 `
+  --max-frames 24 `
+  --blur-threshold 20 `
+  --max-image-size 1200 `
+  --sequential-overlap 12 `
+  --max-points 150000 `
+  --splat-scale 0.01 `
+  --opacity 0.7
+```
+
+Output:
+
+```text
+AI/outputs/video_gaussian_splat_bridgevid1_fast/colmap_reconstruction/sparse_point_cloud.ply
+AI/outputs/video_gaussian_splat_bridgevid1_fast/gaussian_splat_seed/gaussian_splat_seed.ply
+AI/outputs/video_gaussian_splat_bridgevid1_fast/gaussian_splat_seed/gaussian_splat_preview.jpg
+AI/outputs/video_gaussian_splat_bridgevid1_fast/video_gaussian_splat_summary.json
+```
+
+Result:
+
+- Pipeline status: `success`
+- Input frames: `24`
+- Registered COLMAP frames: `2`
+- Sparse points: `95`
+- Splat seed points: `95`
+
+Conclusion:
+
+The command now starts from the video, which is the correct experiment shape.
+However, the BridgeVid1 COLMAP sparse result is too weak for a useful splat.
+For a better test, use a cleaner bridge-only segment, more overlap, or
+MASt3R-SLAM as the reconstruction backend. A true Gaussian Splat test still
+requires training/optimizing splats from frames and camera poses.
+
 ## Comparison With Final Model
 
 The previous branch added rough current-vs-final model comparison. Current best
@@ -116,4 +166,3 @@ target, but the current alignment is still experimental.
 3. Add manual control points between reconstruction and final GLB/BIM model.
 4. Compare only bridge deck/column regions instead of the full scene.
 5. Convert distance differences into section-based progress indicators.
-

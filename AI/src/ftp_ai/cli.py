@@ -8,7 +8,7 @@ from rich.console import Console
 from .batch import run_roi_batch
 from .classification import IdentitySegmentClassifier
 from .config import PipelineConfig
-from .gaussian_splat import pointcloud_to_gaussian_splat
+from .gaussian_splat import pointcloud_to_gaussian_splat, video_to_gaussian_splat
 from .model_comparison import compare_reconstruction_to_model
 from .panorama import build_drone_panorama, build_slitscan_panorama, build_smooth_panorama, build_strip_panorama
 from .pipeline import run_image_pipeline, run_video_pipeline
@@ -277,6 +277,40 @@ def main() -> None:
     splat_parser.add_argument("--max-points", type=int, default=250_000)
     splat_parser.add_argument("--splat-scale", type=float, default=0.01)
     splat_parser.add_argument("--opacity", type=float, default=0.65)
+
+    video_splat_parser = subparsers.add_parser(
+        "video-to-gaussian-splat",
+        help="Extract video frames, run COLMAP, and create an experimental Gaussian Splat seed",
+    )
+    video_splat_parser.add_argument("--video", type=Path, required=True)
+    video_splat_parser.add_argument("--output", type=Path, required=True)
+    video_splat_parser.add_argument(
+        "--colmap-path",
+        type=Path,
+        default=None,
+        help="Path to colmap.exe. Defaults to AI/.external/colmap/nocuda/bin/colmap.exe or PATH.",
+    )
+    video_splat_parser.add_argument("--frame-interval", type=float, default=1.0)
+    video_splat_parser.add_argument("--start-seconds", type=float, default=0.0)
+    video_splat_parser.add_argument("--max-frames", type=int, default=32)
+    video_splat_parser.add_argument("--blur-threshold", type=float, default=50.0)
+    video_splat_parser.add_argument("--max-image-size", type=int, default=1400)
+    video_splat_parser.add_argument("--sequential-overlap", type=int, default=12)
+    video_splat_parser.add_argument(
+        "--matcher",
+        choices=["sequential", "exhaustive"],
+        default="sequential",
+        help="COLMAP matcher. Use exhaustive for small frame sets when sequential matching registers too few frames.",
+    )
+    video_splat_parser.add_argument(
+        "--run-dense",
+        action="store_true",
+        default=False,
+        help="Also run dense COLMAP before converting to a splat seed. Slower, but more complete.",
+    )
+    video_splat_parser.add_argument("--max-points", type=int, default=250_000)
+    video_splat_parser.add_argument("--splat-scale", type=float, default=0.01)
+    video_splat_parser.add_argument("--opacity", type=float, default=0.65)
 
     dust3r_parser = subparsers.add_parser(
         "build-dust3r-3d",
@@ -561,6 +595,39 @@ def main() -> None:
         console.print(f"[green]Gaussian Splat seed:[/green] {args.output / 'gaussian_splat_seed.ply'}")
         console.print(f"[green]Preview:[/green] {args.output / 'gaussian_splat_preview.jpg'}")
         console.print(f"[green]Summary:[/green] {args.output / 'gaussian_splat_summary.json'}")
+        return
+    elif args.command == "video-to-gaussian-splat":
+        summary = video_to_gaussian_splat(
+            video_path=args.video,
+            output_dir=args.output,
+            colmap_path=args.colmap_path,
+            frame_interval_seconds=args.frame_interval,
+            start_seconds=args.start_seconds,
+            max_frames=args.max_frames,
+            blur_threshold=args.blur_threshold,
+            max_image_size=args.max_image_size,
+            sequential_overlap=args.sequential_overlap,
+            matcher=args.matcher,
+            run_dense=args.run_dense,
+            max_points=args.max_points,
+            splat_scale=args.splat_scale,
+            opacity=args.opacity,
+        )
+        console.print(f"[green]Status:[/green] {summary['status']}")
+        if "source_point_cloud_kind" in summary:
+            console.print(f"[green]Source:[/green] {summary['source_point_cloud_kind']}")
+        for warning in summary.get("quality_warnings", []):
+            console.print(f"[yellow]Quality warning:[/yellow] {warning}")
+        outputs = summary.get("outputs", {})
+        if isinstance(outputs, dict):
+            if "source_point_cloud" in outputs:
+                console.print(f"[green]Source point cloud:[/green] {outputs['source_point_cloud']}")
+            if "gaussian_splat_seed" in outputs:
+                console.print(f"[green]Gaussian Splat seed:[/green] {outputs['gaussian_splat_seed']}")
+            if "gaussian_splat_preview" in outputs:
+                console.print(f"[green]Preview:[/green] {outputs['gaussian_splat_preview']}")
+            if "summary" in outputs:
+                console.print(f"[green]Summary:[/green] {outputs['summary']}")
         return
     elif args.command == "build-dust3r-3d":
         summary = build_dust3r_3d_from_video(

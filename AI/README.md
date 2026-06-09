@@ -410,6 +410,28 @@ Important: this is a Gaussian Splat seed, not a fully trained 3DGS scene. A real
 3DGS test should train from source images and camera poses, preferably from
 COLMAP.
 
+Video-first Gaussian Splat seed test:
+
+```powershell
+python -m ftp_ai.cli video-to-gaussian-splat `
+  --video data/raw/BridgeVid1-271223.mp4 `
+  --output outputs/video_gaussian_splat_bridgevid1_fast `
+  --colmap-path .external/colmap/nocuda/bin/colmap.exe `
+  --frame-interval 1.0 `
+  --max-frames 24 `
+  --blur-threshold 20 `
+  --max-image-size 1200 `
+  --sequential-overlap 12 `
+  --max-points 150000 `
+  --splat-scale 0.01 `
+  --opacity 0.7
+```
+
+This starts from the MP4, extracts frames, runs COLMAP sparse reconstruction,
+and writes a splat seed. The first BridgeVid1 test completed, but COLMAP only
+registered `2 / 24` frames and reconstructed `95` sparse points, so the output
+proves the pipeline works but is not a usable 3DGS scene yet.
+
 ## Current Classes
 
 The baseline progress classes are:

@@ -7,8 +7,122 @@ from pathlib import Path
 
 import numpy as np
 
+from .reconstruction import build_colmap_mesh_from_video
+
 
 SH_C0 = 0.28209479177387814
+
+
+def video_to_gaussian_splat(
+    video_path: Path,
+    output_dir: Path,
+    colmap_path: Path | None = None,
+    frame_interval_seconds: float = 1.0,
+    start_seconds: float = 0.0,
+    max_frames: int = 32,
+    blur_threshold: float = 50.0,
+    max_image_size: int = 1400,
+    sequential_overlap: int = 12,
+    matcher: str = "sequential",
+    run_dense: bool = False,
+    max_points: int = 250_000,
+    splat_scale: float = 0.01,
+    opacity: float = 0.65,
+) -> dict[str, object]:
+    """Build an experimental Gaussian Splat seed directly from a video.
+
+    This is a video-first test path: frames are extracted from the drone video,
+    COLMAP estimates camera poses and a reconstruction, then the reconstructed
+    point cloud is converted to a 3DGS-style seed PLY.
+    """
+
+    output_dir.mkdir(parents=True, exist_ok=True)
+    reconstruction_dir = output_dir / "colmap_reconstruction"
+    splat_dir = output_dir / "gaussian_splat_seed"
+
+    reconstruction_summary = build_colmap_mesh_from_video(
+        video_path=video_path,
+        output_dir=reconstruction_dir,
+        colmap_path=colmap_path,
+        frame_interval_seconds=frame_interval_seconds,
+        start_seconds=start_seconds,
+        max_frames=max_frames,
+        blur_threshold=blur_threshold,
+        max_image_size=max_image_size,
+        sequential_overlap=sequential_overlap,
+        matcher=matcher,
+        run_dense=run_dense,
+    )
+
+    dense_ply = reconstruction_dir / "dense_point_cloud.ply"
+    sparse_ply = reconstruction_dir / "sparse_point_cloud.ply"
+    if run_dense and dense_ply.exists():
+        source_ply = dense_ply
+        source_kind = "dense_colmap_point_cloud"
+    elif sparse_ply.exists():
+        source_ply = sparse_ply
+        source_kind = "sparse_colmap_point_cloud"
+    else:
+        summary = {
+            "status": "failed",
+            "method": "video to COLMAP reconstruction to Gaussian Splat seed",
+            "video": str(video_path),
+            "reconstruction": reconstruction_summary,
+            "error": "COLMAP did not produce a sparse or dense point cloud.",
+        }
+        (output_dir / "video_gaussian_splat_summary.json").write_text(
+            json.dumps(summary, indent=2),
+            encoding="utf-8",
+        )
+        return summary
+
+    splat_summary = pointcloud_to_gaussian_splat(
+        input_ply=source_ply,
+        output_dir=splat_dir,
+        max_points=max_points,
+        splat_scale=splat_scale,
+        opacity=opacity,
+    )
+
+    registered_images = int(reconstruction_summary.get("registered_images", 0) or 0)
+    sparse_points = int(reconstruction_summary.get("sparse_points", 0) or 0)
+    quality_warnings = []
+    if registered_images and registered_images < 8:
+        quality_warnings.append(
+            f"Only {registered_images} frames registered; this is too low for a useful splat scene."
+        )
+    if sparse_points and sparse_points < 1_000:
+        quality_warnings.append(
+            f"Only {sparse_points} sparse points were reconstructed; expect a very incomplete splat."
+        )
+
+    summary = {
+        "status": "success",
+        "method": "video to COLMAP reconstruction to Gaussian Splat seed",
+        "video": str(video_path),
+        "source_point_cloud_kind": source_kind,
+        "quality_warnings": quality_warnings,
+        "reconstruction": reconstruction_summary,
+        "gaussian_splat": splat_summary,
+        "outputs": {
+            "frames": str(reconstruction_dir / "images"),
+            "colmap_summary": str(reconstruction_dir / "summary.json"),
+            "source_point_cloud": str(source_ply),
+            "gaussian_splat_seed": str(splat_dir / "gaussian_splat_seed.ply"),
+            "gaussian_splat_preview": str(splat_dir / "gaussian_splat_preview.jpg"),
+            "summary": str(output_dir / "video_gaussian_splat_summary.json"),
+        },
+        "limitations": [
+            "This starts from video, but it is still a Gaussian Splat seed, not a trained 3DGS scene.",
+            "Sparse COLMAP is fast but less complete; use --run-dense for a denser source cloud.",
+            "A full 3DGS result should optimize splats from source frames and COLMAP camera poses.",
+        ],
+    }
+    (output_dir / "video_gaussian_splat_summary.json").write_text(
+        json.dumps(summary, indent=2),
+        encoding="utf-8",
+    )
+    return summary
 
 
 def pointcloud_to_gaussian_splat(
