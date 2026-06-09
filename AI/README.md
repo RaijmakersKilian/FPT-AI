@@ -432,6 +432,19 @@ and writes a splat seed. The first BridgeVid1 test completed, but COLMAP only
 registered `2 / 24` frames and reconstructed `95` sparse points, so the output
 proves the pipeline works but is not a usable 3DGS scene yet.
 
+Proper Nerfstudio/Splatfacto testing is documented in:
+
+```text
+docs/nerfstudio_splatfacto_testing.md
+```
+
+Reusable WSL script:
+
+```bash
+PROCESS_ONLY=1 NUM_FRAMES_TARGET=40 COLMAP_CMD=colmap \
+  bash AI/scripts/run_nerfstudio_bridge1_splat.sh
+```
+
 ## Current Classes
 
 The baseline progress classes are:
