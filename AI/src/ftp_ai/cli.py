@@ -8,6 +8,7 @@ from rich.console import Console
 from .batch import run_roi_batch
 from .classification import IdentitySegmentClassifier
 from .config import PipelineConfig
+from .model_comparison import compare_reconstruction_to_model
 from .panorama import build_drone_panorama, build_slitscan_panorama, build_smooth_panorama, build_strip_panorama
 from .pipeline import run_image_pipeline, run_video_pipeline
 from .reconstruction import (
@@ -255,6 +256,16 @@ def main() -> None:
         default=False,
         help="Only run sparse SfM; skip dense cloud and mesh.",
     )
+
+    compare_3d_parser = subparsers.add_parser(
+        "compare-3d-model",
+        help="Compare a current reconstruction against the completed bridge model",
+    )
+    compare_3d_parser.add_argument("--current", type=Path, required=True, help="Current/as-built PLY reconstruction")
+    compare_3d_parser.add_argument("--final-model", type=Path, required=True, help="Completed bridge model (.glb/.gltf/.obj)")
+    compare_3d_parser.add_argument("--output", type=Path, required=True)
+    compare_3d_parser.add_argument("--max-current-points", type=int, default=200_000)
+    compare_3d_parser.add_argument("--max-model-points", type=int, default=200_000)
 
     dust3r_parser = subparsers.add_parser(
         "build-dust3r-3d",
@@ -511,6 +522,21 @@ def main() -> None:
             console.print(f"[green]Mesh faces:[/green] {summary['mesh_faces']}")
         console.print(f"[green]Summary:[/green] {args.output / 'summary.json'}")
         console.print(f"[green]Mesh target:[/green] {args.output / 'mesh.ply'}")
+        return
+    elif args.command == "compare-3d-model":
+        summary = compare_reconstruction_to_model(
+            current_ply=args.current,
+            final_model=args.final_model,
+            output_dir=args.output,
+            max_current_points=args.max_current_points,
+            max_model_points=args.max_model_points,
+        )
+        console.print(f"[green]Median distance:[/green] {summary['distance_median']}")
+        console.print(f"[green]P90 distance:[/green] {summary['distance_p90']}")
+        console.print(f"[green]Close coverage:[/green] {summary['coverage_close_pct']}%")
+        console.print(f"[green]Preview:[/green] {args.output / 'comparison_preview.jpg'}")
+        console.print(f"[green]Difference PLY:[/green] {args.output / 'difference_pointcloud.ply'}")
+        console.print(f"[green]Summary:[/green] {args.output / 'comparison_summary.json'}")
         return
     elif args.command == "build-dust3r-3d":
         summary = build_dust3r_3d_from_video(

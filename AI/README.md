@@ -327,6 +327,51 @@ Open `mesh.ply` in Blender, MeshLab, CloudCompare, or Windows 3D Viewer. The
 mesh is not yet a clean BIM model: scale is arbitrary without camera calibration
 or GPS/IMU, and moving traffic/background geometry can still be reconstructed.
 
+## Experimental 3D Model Comparison
+
+Use this to compare a current/as-built reconstruction against the completed
+bridge model. The current implementation performs a rough PCA normalization and
+nearest-neighbor distance comparison, so it is a feasibility test rather than a
+survey-accurate BIM comparison.
+
+```powershell
+python -m ftp_ai.cli compare-3d-model `
+  --current outputs/mast3r_slam_bridge1_fast/pointcloud.ply `
+  --final-model ../Frontend/KCPT_Ki_centered.glb `
+  --output outputs/comparison_mast3r_bridge1_vs_final `
+  --max-current-points 150000 `
+  --max-model-points 150000
+```
+
+Outputs:
+
+- `comparison_summary.json`: distance statistics and coverage percentages
+- `comparison_preview.jpg`: top-down visual comparison
+- `difference_pointcloud.ply`: current reconstruction colored by distance
+- `normalized_final_model_points.ply`: sampled final model points in normalized space
+
+Color meaning:
+
+- green: current reconstruction is close to the completed model
+- yellow/orange: some difference
+- red: far from the model, noisy, background, or not aligned
+
+Current test results:
+
+- MASt3R-SLAM bridge point cloud vs final model:
+  - median distance: `0.02386`
+  - P90 distance: `0.08911`
+  - close coverage: `68.6%`
+- COLMAP dense point cloud vs final model:
+  - median distance: `0.0503`
+  - P90 distance: `0.31626`
+  - close coverage: `42.49%`
+
+Interpretation: this supports the teacher's idea that we can compare the current
+state with the finished model, but final progress tracking needs better
+alignment: camera calibration, control points, GPS/RTK, or manually selected
+corresponding points between the reconstruction and BIM/GLB model.
+
 ## Current Classes
 
 The baseline progress classes are:
