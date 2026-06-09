@@ -8,6 +8,7 @@ from rich.console import Console
 from .batch import run_roi_batch
 from .classification import IdentitySegmentClassifier
 from .config import PipelineConfig
+from .gaussian_splat import pointcloud_to_gaussian_splat
 from .model_comparison import compare_reconstruction_to_model
 from .panorama import build_drone_panorama, build_slitscan_panorama, build_smooth_panorama, build_strip_panorama
 from .pipeline import run_image_pipeline, run_video_pipeline
@@ -266,6 +267,16 @@ def main() -> None:
     compare_3d_parser.add_argument("--output", type=Path, required=True)
     compare_3d_parser.add_argument("--max-current-points", type=int, default=200_000)
     compare_3d_parser.add_argument("--max-model-points", type=int, default=200_000)
+
+    splat_parser = subparsers.add_parser(
+        "pointcloud-to-gaussian-splat",
+        help="Convert a point cloud into an experimental 3D Gaussian Splat seed PLY",
+    )
+    splat_parser.add_argument("--input", type=Path, required=True, help="Input colored PLY point cloud")
+    splat_parser.add_argument("--output", type=Path, required=True)
+    splat_parser.add_argument("--max-points", type=int, default=250_000)
+    splat_parser.add_argument("--splat-scale", type=float, default=0.01)
+    splat_parser.add_argument("--opacity", type=float, default=0.65)
 
     dust3r_parser = subparsers.add_parser(
         "build-dust3r-3d",
@@ -537,6 +548,19 @@ def main() -> None:
         console.print(f"[green]Preview:[/green] {args.output / 'comparison_preview.jpg'}")
         console.print(f"[green]Difference PLY:[/green] {args.output / 'difference_pointcloud.ply'}")
         console.print(f"[green]Summary:[/green] {args.output / 'comparison_summary.json'}")
+        return
+    elif args.command == "pointcloud-to-gaussian-splat":
+        summary = pointcloud_to_gaussian_splat(
+            input_ply=args.input,
+            output_dir=args.output,
+            max_points=args.max_points,
+            splat_scale=args.splat_scale,
+            opacity=args.opacity,
+        )
+        console.print(f"[green]Splat points:[/green] {summary['splat_points']}")
+        console.print(f"[green]Gaussian Splat seed:[/green] {args.output / 'gaussian_splat_seed.ply'}")
+        console.print(f"[green]Preview:[/green] {args.output / 'gaussian_splat_preview.jpg'}")
+        console.print(f"[green]Summary:[/green] {args.output / 'gaussian_splat_summary.json'}")
         return
     elif args.command == "build-dust3r-3d":
         summary = build_dust3r_3d_from_video(

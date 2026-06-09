@@ -372,6 +372,44 @@ state with the finished model, but final progress tracking needs better
 alignment: camera calibration, control points, GPS/RTK, or manually selected
 corresponding points between the reconstruction and BIM/GLB model.
 
+## vSLAM And Gaussian Splat Experiments
+
+MASt3R-SLAM is used as the current vSLAM test. It runs in WSL with the external
+MASt3R-SLAM checkout and saves a point cloud plus camera trajectory.
+
+```powershell
+wsl -d Ubuntu-24.04 -u root -- bash /mnt/c/Users/kilia/Documents/Howest\ 2025-2026/Courses\ Semester\ 2/IndustryProject/Project/FTP-AI/AI/scripts/run_mast3r_bridge1_fast.sh
+```
+
+Current vSLAM result:
+
+- input: `data/raw/BridgeVid1-271223.mp4`
+- output point cloud: `outputs/mast3r_slam_bridge1_fast/pointcloud.ply`
+- output trajectory: `outputs/mast3r_slam_bridge1_fast/trajectory.txt`
+- point cloud vertices: `3,077,001`
+- trajectory/keyframes: `30`
+
+Gaussian Splat seed test:
+
+```powershell
+python -m ftp_ai.cli pointcloud-to-gaussian-splat `
+  --input outputs/mast3r_slam_bridge1_fast/pointcloud.ply `
+  --output outputs/gaussian_splat_bridge1_seed `
+  --max-points 250000 `
+  --splat-scale 0.008 `
+  --opacity 0.7
+```
+
+This writes:
+
+- `gaussian_splat_seed.ply`
+- `gaussian_splat_preview.jpg`
+- `gaussian_splat_summary.json`
+
+Important: this is a Gaussian Splat seed, not a fully trained 3DGS scene. A real
+3DGS test should train from source images and camera poses, preferably from
+COLMAP.
+
 ## Current Classes
 
 The baseline progress classes are:
