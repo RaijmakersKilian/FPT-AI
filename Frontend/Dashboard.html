@@ -18,6 +18,7 @@
 }
 </script>
 <script src="thumbnails.js" defer></script>
+<script src="inspector.js" defer></script>
 <script type="module" src="viewer.js"></script>
 </head>
 
@@ -216,23 +217,7 @@
         <span class="card-title">Construction Inspector</span>
       </div>
       <div class="insp-label">By Category</div>
-
-      <div class="cat">
-        <div class="cat-row"><span class="cat-name">Foundation</span><span class="cat-meta">2/2 · 100%</span></div>
-        <div class="bar"><i style="width:100%"></i></div>
-      </div>
-      <div class="cat">
-        <div class="cat-row"><span class="cat-name">Columns</span><span class="cat-meta">3/4 · 75%</span></div>
-        <div class="bar"><i style="width:75%"></i></div>
-      </div>
-      <div class="cat">
-        <div class="cat-row"><span class="cat-name">Beams</span><span class="cat-meta">8/10 · 80%</span></div>
-        <div class="bar"><i style="width:80%"></i></div>
-      </div>
-      <div class="cat">
-        <div class="cat-row"><span class="cat-name">Deck</span><span class="cat-meta">2/4 · 50%</span></div>
-        <div class="bar"><i style="width:50%"></i></div>
-      </div>
+      <div id="inspector-categories"></div>
     </div>
   </section>
 

@@ -1,65 +1,91 @@
 import * as THREE from 'three';
 import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
 import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
+import { PLYLoader } from 'three/addons/loaders/PLYLoader.js';
 
 const DEFAULT_MODEL = 'KCPT_Ki_centered.glb';
+const COVERAGE_PLY  = '/api/coverage/pointcloud';
 
 const container = document.getElementById('bim-viewport');
-const canvas = document.getElementById('bim-canvas');
+const canvas    = document.getElementById('bim-canvas');
 
-if (container && canvas) {
-  initViewer();
-}
+if (container && canvas) initViewer();
 
 async function initViewer() {
-  const w = container.clientWidth || 600;
+  const w = container.clientWidth  || 600;
   const h = container.clientHeight || 400;
 
-  // Scene
   const scene = new THREE.Scene();
   scene.background = new THREE.Color(0x0c1124);
 
-  // Camera
-  const camera = new THREE.PerspectiveCamera(60, w / h, 0.01, 2000);
-  camera.position.set(20, 15, 20);
+  const camera = new THREE.PerspectiveCamera(60, w / h, 0.01, 10000);
+  camera.position.set(0, 50, 200);
 
-  // Renderer
   const renderer = new THREE.WebGLRenderer({ canvas, antialias: true });
   renderer.setSize(w, h);
   renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
-  renderer.shadowMap.enabled = true;
 
-  // Lighting
-  scene.add(new THREE.AmbientLight(0xffffff, 0.7));
-  const sun = new THREE.DirectionalLight(0xffffff, 1.2);
-  sun.position.set(60, 100, 60);
-  scene.add(sun);
-  const fill = new THREE.DirectionalLight(0x8ab4f8, 0.4);
-  fill.position.set(-40, 20, -30);
-  scene.add(fill);
+  scene.add(new THREE.AmbientLight(0xffffff, 1.0));
 
-  // Controls
   const controls = new OrbitControls(camera, renderer.domElement);
   controls.enableDamping = true;
   controls.dampingFactor = 0.05;
-  controls.minDistance = 0.5;
-  controls.maxDistance = 1000;
+  controls.minDistance   = 1;
+  controls.maxDistance   = 10000;
 
   const gltfLoader = new GLTFLoader();
-  let currentModel = null;
+  const plyLoader  = new PLYLoader();
 
-  async function loadModel(url, revokeAfter = false) {
+  let coveragePoints  = null;
+  let currentModel    = null;
+  let showModel       = false;   // GLB hidden by default; coverage PLY is primary view
+  // ── Coverage PLY ─────────────────────────────────────────────────────────────
+
+  hidePlaceholder();
+  setLoading(true);
+
+  try {
+    const geometry = await new Promise((resolve, reject) => {
+      plyLoader.load(COVERAGE_PLY, resolve, undefined, reject);
+    });
+
+    // PLYLoader sets a 'color' attribute from red/green/blue in the PLY
+    const hasColor = geometry.hasAttribute('color');
+    const material = new THREE.PointsMaterial({
+      size:           1.0,
+      vertexColors:   hasColor,
+      color:          hasColor ? undefined : 0x00cc44,
+      sizeAttenuation: true,
+    });
+
+    coveragePoints = new THREE.Points(geometry, material);
+    // Open3D writes Z-up; rotate to Y-up to match Three.js convention
+    coveragePoints.rotation.x = -Math.PI / 2;
+    scene.add(coveragePoints);
+    fitCamera(coveragePoints, camera, controls);
+  } catch (err) {
+    console.error('coverage_result.ply laden mislukt:', err);
+    // Fallback: load the GLB model instead
+    showModel = true;
+    loadGLB(DEFAULT_MODEL);
+  }
+
+  setLoading(false);
+
+  // ── GLB model (toggled via button, hidden by default) ────────────────────────
+
+  async function loadGLB(url, revokeAfter = false) {
     setLoading(true);
-    hidePlaceholder();
     try {
       const gltf = await gltfLoader.loadAsync(url);
       if (currentModel) scene.remove(currentModel);
       currentModel = gltf.scene;
       currentModel.rotation.x = -Math.PI / 2;
+      currentModel.visible = showModel;
       scene.add(currentModel);
-      fitCamera(currentModel, camera, controls);
+      if (showModel) fitCamera(currentModel, camera, controls);
     } catch (err) {
-      console.error('Fout bij laden model:', err);
+      console.error('Model laden mislukt:', err);
       showPlaceholder();
     } finally {
       if (revokeAfter) URL.revokeObjectURL(url);
@@ -67,28 +93,30 @@ async function initViewer() {
     }
   }
 
-  // Laad standaard model
-  loadModel(DEFAULT_MODEL);
+  // Load GLB silently in background (for toggle use)
+  loadGLB(DEFAULT_MODEL);
 
-  // File input — .glb / .gltf
+  // ── File input (load custom GLB/GLTF) ────────────────────────────────────────
+
   const fileInput = document.getElementById('ifc-file-input');
   if (fileInput) {
     fileInput.addEventListener('change', (e) => {
       const file = e.target.files[0];
       if (!file) return;
-      loadModel(URL.createObjectURL(file), true);
+      showModel = true;
+      loadGLB(URL.createObjectURL(file), true);
       fileInput.value = '';
     });
   }
 
-  // Render loop
+  // ── Render loop ──────────────────────────────────────────────────────────────
+
   (function animate() {
     requestAnimationFrame(animate);
     controls.update();
     renderer.render(scene, camera);
   })();
 
-  // Resize
   new ResizeObserver(() => {
     const nw = container.clientWidth;
     const nh = container.clientHeight;
@@ -99,12 +127,18 @@ async function initViewer() {
   }).observe(container);
 }
 
-function fitCamera(model, camera, controls) {
-  const box = new THREE.Box3().setFromObject(model);
+// ── Helpers ───────────────────────────────────────────────────────────────────
+
+function fitCamera(object, camera, controls) {
+  const box    = new THREE.Box3().setFromObject(object);
   const center = box.getCenter(new THREE.Vector3());
-  const size = box.getSize(new THREE.Vector3());
+  const size   = box.getSize(new THREE.Vector3());
   const maxDim = Math.max(size.x, size.y, size.z);
-  camera.position.set(center.x + maxDim * 1.5, center.y + maxDim, center.z + maxDim * 1.5);
+  camera.position.set(
+    center.x,
+    center.y + maxDim * 0.5,
+    center.z + maxDim * 1.2
+  );
   controls.target.copy(center);
   controls.update();
 }

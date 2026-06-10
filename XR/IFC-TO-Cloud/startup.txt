@@ -1,0 +1,1 @@
+python coverage_analysis.py --ifc ifc_cloud.ply --mast3r mast3r_filtered.ply --export-ply ../../Frontend/coverage_result.ply --export-json ../../Frontend/coverage_data.json
