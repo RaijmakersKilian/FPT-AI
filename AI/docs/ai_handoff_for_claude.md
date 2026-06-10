@@ -261,6 +261,45 @@ Conclusion:
 - The result is a scene mesh, not a clean BIM bridge object.
 - Moving traffic/background noise hurts quality.
 
+### Manual 10-Frame COLMAP Test
+
+Teacher suggestion tested on 2026-06-10:
+
+```text
+Take around 10 non-consecutive frames, inspect them, and make a point cloud /
+manual matching test.
+```
+
+Dedicated note:
+
+```text
+AI/docs/manual_frame_reconstruction_testing.md
+```
+
+Output:
+
+```text
+AI/outputs/manual10_colmap_bridgevid2_s22/
+AI/outputs/manual10_twoview_bridgevid2_1320_1725/
+```
+
+Result:
+
+```text
+10 selected frames
+10 registered COLMAP images
+10911 sparse points
+```
+
+Conclusion:
+
+```text
+Manual/spaced frame selection helps. It is a good diagnostic step before
+running heavier COLMAP, MASt3R-SLAM, or Gaussian Splatting jobs. The output is
+still not a clean bridge model because many features come from road, buildings,
+trees, water, and traffic.
+```
+
 ### MASt3R-SLAM / vSLAM
 
 MASt3R-SLAM is the main vSLAM experiment.
