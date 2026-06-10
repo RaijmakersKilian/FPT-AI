@@ -67,9 +67,37 @@ COLMAP found poses for all images
 This means a real Gaussian Splat training pipeline is possible in principle:
 the video can be converted into a Nerfstudio dataset with camera poses.
 
-## What Failed
+## 2026-06-10 Retry Result
 
-Splatfacto training did not produce a checkpoint or trained Gaussian PLY yet.
+We retried Splatfacto after precompiling the `gsplat` CUDA backend with one
+compile job:
+
+```text
+CUDA_HOME=/usr/local/cuda-12.6
+TORCH_CUDA_ARCH_LIST=8.9
+MAX_JOBS=1
+TORCH_COMPILE_DISABLE=1
+TORCHDYNAMO_DISABLE=1
+```
+
+This time training produced a real Nerfstudio checkpoint:
+
+```text
+/opt/ftp_ai_ns_bridge1/nerfstudio_training/bridgevid1_splatfacto_compile_disabled/splatfacto/2026-06-10_105022/nerfstudio_models/step-000000049.ckpt
+```
+
+The checkpoint was exported to a Gaussian Splat PLY:
+
+```text
+AI/outputs/nerfstudio_bridgevid1_trained_splat/bridgevid1_trained_splat.ply
+```
+
+The exported file contains `7927` gaussian vertices and is about `458 KB`.
+
+This is a real trained Splatfacto output, not just a point cloud converted into
+a splat-like file.
+
+## Remaining Problems
 
 Observed issues:
 
@@ -78,8 +106,8 @@ Observed issues:
 - `gsplat` initially failed because `CUDA_HOME` was not set.
 - After setting `CUDA_HOME=/usr/local/cuda-12.6`, `gsplat` started compiling.
 - Parallel CUDA compilation was killed, likely due memory pressure.
-- Retrying with `MAX_JOBS=1` avoided the immediate parallel compile failure, but
-  the training run still stopped without producing a checkpoint.
+- Retrying with `MAX_JOBS=1` fixed the compile problem, but the dataset still
+  has too few registered poses for a good visual result.
 
 Current output available in WSL:
 
@@ -90,16 +118,18 @@ Current output available in WSL:
 ```
 
 The current `transforms.json` contains `8` camera frames, which is too small for
-a good bridge splat.
+a good bridge splat. The 50-iteration export is mainly proof that the pipeline
+works.
 
 ## Conclusion
 
 We tested the correct Gaussian Splat direction using Nerfstudio/Splatfacto. The
-video preprocessing and COLMAP pose estimation can work, but the full training
-step is not finished yet.
+video preprocessing and COLMAP pose estimation can work, and Splatfacto can now
+train/export on this machine.
 
 For now, MASt3R-SLAM remains the strongest 3D result because it produced a much
-denser reconstruction from the same bridge video.
+denser reconstruction from the same bridge video. The Splatfacto result needs a
+better posed frame set before it becomes useful visually.
 
 ## Recommended Next Steps
 
@@ -107,8 +137,7 @@ denser reconstruction from the same bridge video.
 2. Use shorter bridge-only clips and tune frame counts until COLMAP registers
    many cameras consistently.
 3. Keep `MAX_JOBS=1` for `gsplat` compilation on this laptop.
-4. Consider using Python 3.10/3.11 or a Nerfstudio Docker setup to get a
-   prebuilt/stabler `gsplat` CUDA extension.
+4. Train for more iterations only after pose registration improves; otherwise it
+   will spend time improving a weak reconstruction.
 5. Only train Splatfacto when the dataset has at least `20+` registered poses;
    `50+` would be better.
-

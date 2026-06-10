@@ -22,6 +22,7 @@ NUM_DOWNSCALES="${NUM_DOWNSCALES:-2}"
 MATCHING_METHOD="${MATCHING_METHOD:-sequential}"
 CAMERA_TYPE="${CAMERA_TYPE:-pinhole}"
 MAX_NUM_ITERATIONS="${MAX_NUM_ITERATIONS:-3000}"
+STEPS_PER_SAVE="${STEPS_PER_SAVE:-100}"
 PROCESS_ONLY="${PROCESS_ONLY:-0}"
 SKIP_PROCESS="${SKIP_PROCESS:-0}"
 MAX_JOBS="${MAX_JOBS:-1}"
@@ -44,6 +45,10 @@ if [[ -d "$CUDA_HOME" ]]; then
   export LD_LIBRARY_PATH="$CUDA_HOME/lib64:${LD_LIBRARY_PATH:-}"
 fi
 export MAX_JOBS
+export TORCH_CUDA_ARCH_LIST="${TORCH_CUDA_ARCH_LIST:-8.9}"
+export TORCH_COMPILE_DISABLE="${TORCH_COMPILE_DISABLE:-1}"
+export TORCHDYNAMO_DISABLE="${TORCHDYNAMO_DISABLE:-1}"
+export TORCHINDUCTOR_COMPILE_THREADS="${TORCHINDUCTOR_COMPILE_THREADS:-1}"
 
 if [[ "$SKIP_PROCESS" != "1" ]]; then
   echo "Processing video for Nerfstudio:"
@@ -79,5 +84,6 @@ echo "  experiment: $EXPERIMENT_NAME"
   --output-dir "$TRAIN_OUTPUT_DIR" \
   --experiment-name "$EXPERIMENT_NAME" \
   --max-num-iterations "$MAX_NUM_ITERATIONS" \
+  --steps-per-save "$STEPS_PER_SAVE" \
   nerfstudio-data \
   --data "$OUTPUT_DIR"
