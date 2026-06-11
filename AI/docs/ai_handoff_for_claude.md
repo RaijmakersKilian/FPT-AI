@@ -640,27 +640,63 @@ Conclusion:
 
 There is an experimental current-vs-final model comparison direction.
 
-Known output folders:
+Upgraded on 2026-06-11 (see `AI/docs/method_comparison_table.md` for full
+details and results). The comparison in `AI/src/ftp_ai/model_comparison.py`
+now does:
 
 ```text
-AI/outputs/comparison_colmap_bridgevid2_vs_final/
-AI/outputs/comparison_mast3r_bridge1_vs_final/
+1. PCA + sign-flip coarse alignment (as before)
+2. Trimmed scale-aware ICP refinement (robust to trees/traffic noise)
+3. Current-to-model distances (scan noise / likely non-bridge points)
+4. Model-to-current distances (the actual progress signal: which planned
+   geometry has as-built evidence)
+5. Per-section built percentage along the bridge axis (default 10 sections)
 ```
 
-Known result from the MASt3R-SLAM comparison:
+A completed bridge reference point cloud is available and is the better
+reference (denser and bridge-only compared to the GLB):
 
 ```text
-median distance: 0.02386
-P90 distance: 0.08911
-close coverage: 68.6%
+AI/data/BridgePointcloud/coverage_result.ply   (500,000 points, Open3D export)
 ```
+
+Output folders:
+
+```text
+AI/outputs/comparison_colmap_bridgevid2_vs_final/              (v1, PCA only)
+AI/outputs/comparison_mast3r_bridge1_vs_final/                 (v1, PCA only)
+AI/outputs/comparison_mast3r_bridge1_vs_final_v2/              (ICP, GLB ref)
+AI/outputs/comparison_colmap_bridgevid2_vs_final_v2/           (ICP, GLB ref)
+AI/outputs/comparison_mast3r_bridge1_vs_bridgepointcloud/      (ICP, cloud ref)
+AI/outputs/comparison_colmap_bridgevid2_vs_bridgepointcloud/   (ICP, cloud ref)
+```
+
+Key results (2026-06-11):
+
+```text
+ICP improved MASt3R-vs-GLB median distance from 0.02386 to 0.01384 and close
+coverage from 68.6% to 76.59%.
+
+Against the completed bridge point cloud:
+- MASt3R cloud: 82.28% of model points have as-built evidence; sections range
+  60-100% with one uncovered end section at 0%.
+- COLMAP cloud: 56.2% overall; covered middle sections read 72-100% built and
+  the uncovered bridge ends correctly read 0%.
+```
+
+The COLMAP per-section result is the strongest feasibility evidence so far:
+the pipeline correctly distinguishes scanned/present sections from
+missing/unscanned sections.
 
 Important caveat:
 
 ```text
-The alignment is experimental. Do not present this as final accurate progress
-measurement. Present it as proof that comparing a current reconstruction with a
-final bridge model is possible in principle.
+The alignment is experimental and scale-normalized. "Built %" means "the scan
+found geometry near the planned geometry"; with a completed bridge and full
+coverage video this measures coverage, not construction progress over time.
+Do not present this as final accurate progress measurement. Present it as
+proof that per-section comparison of a current reconstruction with a final
+bridge reference works in principle.
 ```
 
 ## What The Results Mean
@@ -775,6 +811,13 @@ segment gives the cleanest point cloud.
 
 This is now the main AI/3D direction.
 
+Progress 2026-06-11: largely done at research level. ICP refinement,
+model-to-current progress measurement, and per-section reporting are
+implemented in `AI/src/ftp_ai/model_comparison.py` and tested against both
+the GLB model and `AI/data/BridgePointcloud/coverage_result.ply`. See
+`AI/docs/method_comparison_table.md`. Remaining for production: control-point
+based calibrated alignment and real construction-stage scans.
+
 Recommended process:
 
 1. Convert final BIM/IFC/GLB/OBJ bridge model into a dense point cloud.
@@ -804,6 +847,8 @@ Important:
 This is likely one of the most valuable research outputs.
 
 ### Task 5: Better Presentation Artifacts
+
+Done 2026-06-11: see `AI/docs/method_comparison_table.md`.
 
 Create a clear table:
 
@@ -890,6 +935,7 @@ AI/docs/interim_ai_brief.md
 AI/docs/vslam_gaussian_splat_testing.md
 AI/docs/nerfstudio_splatfacto_testing.md
 AI/docs/manual_frame_reconstruction_testing.md
+AI/docs/method_comparison_table.md
 ```
 
 Then inspect:

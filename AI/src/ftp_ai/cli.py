@@ -267,6 +267,9 @@ def main() -> None:
     compare_3d_parser.add_argument("--output", type=Path, required=True)
     compare_3d_parser.add_argument("--max-current-points", type=int, default=200_000)
     compare_3d_parser.add_argument("--max-model-points", type=int, default=200_000)
+    compare_3d_parser.add_argument("--sections", type=int, default=10, help="Number of slices along the bridge axis for per-section progress")
+    compare_3d_parser.add_argument("--icp-iterations", type=int, default=40, help="Trimmed ICP refinement iterations (0 disables ICP)")
+    compare_3d_parser.add_argument("--built-threshold", type=float, default=0.04, help="Normalized distance below which a model point counts as built")
 
     splat_parser = subparsers.add_parser(
         "pointcloud-to-gaussian-splat",
@@ -575,12 +578,20 @@ def main() -> None:
             output_dir=args.output,
             max_current_points=args.max_current_points,
             max_model_points=args.max_model_points,
+            sections=args.sections,
+            icp_iterations=args.icp_iterations,
+            built_threshold=args.built_threshold,
         )
+        progress = summary["progress_estimate"]
         console.print(f"[green]Median distance:[/green] {summary['distance_median']}")
         console.print(f"[green]P90 distance:[/green] {summary['distance_p90']}")
         console.print(f"[green]Close coverage:[/green] {summary['coverage_close_pct']}%")
+        console.print(f"[green]Model built (progress estimate):[/green] {progress['model_built_pct']}%")
+        for entry in progress["per_section"]:
+            console.print(f"[green]  Section {entry['section']}:[/green] {entry['built_pct']}% built ({entry['model_points']} model points)")
         console.print(f"[green]Preview:[/green] {args.output / 'comparison_preview.jpg'}")
         console.print(f"[green]Difference PLY:[/green] {args.output / 'difference_pointcloud.ply'}")
+        console.print(f"[green]Coverage PLY:[/green] {args.output / 'model_coverage_pointcloud.ply'}")
         console.print(f"[green]Summary:[/green] {args.output / 'comparison_summary.json'}")
         return
     elif args.command == "pointcloud-to-gaussian-splat":
