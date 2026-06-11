@@ -123,6 +123,49 @@ loose coverage). The correct workflow is therefore always:
 mask -> reconstruct -> remove black points -> compare
 ```
 
+## Geometric Cleaning (Follow-Up 2, Same Day)
+
+After black-point filtering, MeshLab still showed distortion: tall grey
+smears (thin poles/trees streaked across depth) and spiky blobs around
+vegetation. These are normal MASt3R artifacts - the export uses no
+confidence filtering (C_conf 0.0), so every guessed point is kept.
+
+`AI/scripts/clean_pointcloud.py` removes them post-hoc with two filters:
+
+```text
+1. Statistical outlier removal: drop points whose mean distance to their 16
+   nearest neighbors is > mean + 2 std (floating noise). Removed 168,222.
+2. Density filter: drop points with < 24 neighbors inside a radius of 6x the
+   median nearest-neighbor distance. Thin depth-smear beams survive SOR
+   (they have close neighbors along the smear) but fail the density test.
+   Removed 349,204 more.
+```
+
+Result: 3,439,621 -> 2,922,195 points (15.04% removed).
+
+```text
+AI/outputs/mast3r_slam_bridge1_masked/pointcloud_clean.ply
+AI/outputs/comparison_mast3r_bridge1_masked_clean_vs_bridgepointcloud/
+```
+
+Full metric evolution across the cleaning chain (all vs the completed bridge
+point cloud):
+
+```text
+                       baseline   masked    +black filter   +geometric clean
+model built (0.04)     82.28%     87.23%    81.07%          77.98%
+model built strict     62.85%     68.52%    61.88%          60.01%
+likely non-bridge      7.51%      6.41%     6.32%           2.77%
+close coverage         66.05%     66.55%    66.27%          67.03%
+P90 distance           0.11916    0.11091   0.11085         0.09285
+```
+
+Reading this correctly: every cleaning step lowers the "built %" while every
+cloud-quality metric improves. That means noise points were counting as false
+as-built evidence all along. The cleaned cloud's 77.98% is the most
+trustworthy progress estimate of the series, and the 2.77% non-bridge figure
+shows the scan is now almost entirely bridge geometry.
+
 ## Interpretation
 
 ```text
@@ -162,9 +205,14 @@ AI/.venv-sam3/Scripts/python.exe AI/scripts/remove_black_points.py \
   --output AI/outputs/mast3r_slam_bridge1_masked/pointcloud_filtered.ply \
   --threshold 20
 
-# 4. compare against the completed bridge cloud
+# 4. remove smears and floating noise (Windows, AI/.venv-sam3 venv)
+AI/.venv-sam3/Scripts/python.exe AI/scripts/clean_pointcloud.py \
+  --input AI/outputs/mast3r_slam_bridge1_masked/pointcloud_filtered.ply \
+  --output AI/outputs/mast3r_slam_bridge1_masked/pointcloud_clean.ply
+
+# 5. compare against the completed bridge cloud
 PYTHONPATH=AI/src python -m ftp_ai.cli compare-3d-model \
-  --current AI/outputs/mast3r_slam_bridge1_masked/pointcloud_filtered.ply \
+  --current AI/outputs/mast3r_slam_bridge1_masked/pointcloud_clean.ply \
   --final-model AI/data/BridgePointcloud/coverage_result.ply \
-  --output AI/outputs/comparison_mast3r_bridge1_masked_filtered_vs_bridgepointcloud
+  --output AI/outputs/comparison_mast3r_bridge1_masked_clean_vs_bridgepointcloud
 ```
