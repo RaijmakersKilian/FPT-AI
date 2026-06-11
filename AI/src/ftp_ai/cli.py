@@ -272,6 +272,8 @@ def main() -> None:
     compare_3d_parser.add_argument("--built-threshold", type=float, default=0.04, help="Normalized distance below which a model point counts as built")
     compare_3d_parser.add_argument("--control-points-current", type=Path, default=None, help="JSON of picked landmarks on the current cloud (pick_control_points.py)")
     compare_3d_parser.add_argument("--control-points-reference", type=Path, default=None, help="JSON of the same landmarks picked on the reference, same order")
+    compare_3d_parser.add_argument("--anchor-current", type=Path, default=None, help="JSON with one rough point near a bridge end on the current cloud (resolves the mirror ambiguity)")
+    compare_3d_parser.add_argument("--anchor-reference", type=Path, default=None, help="JSON with one rough point near the SAME bridge end on the reference")
 
     splat_parser = subparsers.add_parser(
         "pointcloud-to-gaussian-splat",
@@ -585,10 +587,16 @@ def main() -> None:
             built_threshold=args.built_threshold,
             control_points_current=args.control_points_current,
             control_points_reference=args.control_points_reference,
+            anchor_current=args.anchor_current,
+            anchor_reference=args.anchor_reference,
         )
         progress = summary["progress_estimate"]
         if summary["alignment"].get("method") == "control_points":
             console.print(f"[green]Control-point RMS error:[/green] {summary['alignment']['rms_error']} (max {summary['alignment']['max_error']})")
+        elif summary["alignment"].get("method") == "anchor_disambiguated":
+            console.print(f"[green]Mirror resolved by anchor:[/green] {summary['alignment']['chosen_mirror']} (anchor dist {summary['alignment']['anchor_distance_chosen']} vs {summary['alignment']['anchor_distance_rejected']})")
+            if "warning" in summary["alignment"]:
+                console.print(f"[yellow]Warning:[/yellow] {summary['alignment']['warning']}")
         console.print(f"[green]Median distance:[/green] {summary['distance_median']}")
         console.print(f"[green]P90 distance:[/green] {summary['distance_p90']}")
         console.print(f"[green]Close coverage:[/green] {summary['coverage_close_pct']}%")

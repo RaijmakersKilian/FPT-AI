@@ -19,6 +19,8 @@ def compare_reconstruction_to_model(
     built_threshold: float = 0.04,
     control_points_current: Path | None = None,
     control_points_reference: Path | None = None,
+    anchor_current: Path | None = None,
+    anchor_reference: Path | None = None,
 ) -> dict[str, object]:
     """Compare an as-built reconstruction with a completed bridge model.
 
@@ -68,6 +70,18 @@ def compare_reconstruction_to_model(
             cKDTree,
             iterations=icp_iterations,
             allow_scale=False,
+        )
+    elif anchor_current is not None and anchor_reference is not None:
+        # Anchor path: one rough click near the same bridge end in both clouds
+        # resolves the lengthwise mirror ambiguity that geometry cannot.
+        current_aligned, alignment_info, icp_info = _anchor_disambiguated_alignment(
+            current_points,
+            model_norm,
+            model_transform,
+            anchor_current,
+            anchor_reference,
+            cKDTree,
+            icp_iterations,
         )
     else:
         current_norm, current_transform = _pca_normalize(current_points)
@@ -282,6 +296,48 @@ def _control_point_alignment(
         "max_error": round(float(residuals.max()), 4),
         "per_point_error": [round(float(value), 4) for value in residuals],
     }
+
+
+def _anchor_disambiguated_alignment(
+    current_points: np.ndarray,
+    model_norm: np.ndarray,
+    model_transform: dict[str, object],
+    anchor_current: Path,
+    anchor_reference: Path,
+    cKDTree,
+    icp_iterations: int,
+) -> tuple[np.ndarray, dict[str, object], dict[str, object]]:
+    """Align with PCA + ICP, using one rough anchor pair to pick the mirror.
+
+    The anchor point rides along through the whole alignment as an extra row
+    of the current cloud, so no separate transform bookkeeping is needed.
+    """
+    anchor_cur = _load_control_points(anchor_current)[:1]
+    anchor_ref = _load_control_points(anchor_reference)[:1]
+    anchor_ref_norm = _apply_normalization(anchor_ref, model_transform)[0]
+
+    extended = np.vstack([current_points, anchor_cur])
+    extended_norm, _ = _pca_normalize(extended)
+    base, sign_info = _best_sign_alignment(extended_norm, model_norm, cKDTree)
+
+    candidates = []
+    for label, flip in (("as_picked", np.array([1.0, 1.0, 1.0])), ("length_mirrored", np.array([-1.0, -1.0, 1.0]))):
+        aligned_ext, icp_info = _trimmed_icp(base * flip, model_norm, cKDTree, iterations=icp_iterations)
+        anchor_distance = float(np.linalg.norm(aligned_ext[-1] - anchor_ref_norm))
+        candidates.append((anchor_distance, label, aligned_ext, icp_info))
+
+    candidates.sort(key=lambda item: item[0])
+    best_distance, best_label, best_aligned_ext, best_icp = candidates[0]
+    info = {
+        "method": "anchor_disambiguated",
+        "base_sign_flip": sign_info["sign_flip"],
+        "chosen_mirror": best_label,
+        "anchor_distance_chosen": round(best_distance, 5),
+        "anchor_distance_rejected": round(candidates[1][0], 5),
+    }
+    if best_distance >= candidates[1][0] * 0.8:
+        info["warning"] = "Anchor distances are close; the anchor may be near the bridge center. Pick a point closer to one end."
+    return best_aligned_ext[:-1], info, best_icp
 
 
 def _load_control_points(path: Path) -> np.ndarray:
