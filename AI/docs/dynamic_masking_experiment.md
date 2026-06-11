@@ -166,6 +166,49 @@ as-built evidence all along. The cleaned cloud's 77.98% is the most
 trustworthy progress estimate of the series, and the 2.77% non-bridge figure
 shows the scan is now almost entirely bridge geometry.
 
+## Denser Frames To Fill Road Holes (Follow-Up 3, Same Day)
+
+After cleaning, MeshLab showed holes in the road/deck. Most are real missing
+data: where a vehicle covered the road in the keyframe that observed that
+spot, removing the vehicle leaves a gap. The honest fix is more
+observations, not interpolation, so the pipeline was rerun at every 15th
+frame instead of every 30th (230 frames).
+
+```text
+AI/outputs/bridgevid1_masked_frames_s15/       (230 masked frames)
+AI/outputs/mast3r_slam_bridge1_masked_s15/     (cloud + filtered + clean)
+AI/outputs/comparison_mast3r_bridge1_masked_s15_clean_vs_bridgepointcloud/
+```
+
+Result vs the every-30th-frame clean cloud:
+
+```text
+                       s30 clean    s15 clean
+keyframes              38           42
+clean points           2,922,195    3,212,993
+top-view fill          64.1%        66.3%
+model built (0.04)     77.98%       82.40%
+model built strict     60.01%       68.76%
+likely non-bridge      2.77%        2.43%
+P90 distance           0.09285      0.09422
+```
+
+The s15 clean cloud is the best result of the whole series: highest strict
+built percentage, lowest non-bridge fraction, and visibly fuller roads.
+
+Two honest caveats:
+
+```text
+1. Doubling the input frames only added 4 keyframes (38 -> 42), because
+   MASt3R-SLAM selects keyframes by motion/covisibility, not frame count.
+   Going even denser (every 5th frame) would mostly add compute, not
+   coverage. To get more keyframes, raise match_frac_thresh in the config
+   instead.
+2. Some deck holes remain because those spots were never seen car-free in
+   any keyframe. Hole-filling/Poisson meshing could close them visually,
+   but it invents geometry and must never feed the progress comparison.
+```
+
 ## Interpretation
 
 ```text
