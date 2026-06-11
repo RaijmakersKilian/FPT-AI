@@ -1,11 +1,72 @@
 # AI Handoff For Claude Code
 
-Date: 2026-06-10
+Date: 2026-06-11
 
 Current branch: `ai-vslam-gaussian-splat-test`
 
 Purpose of this document: give another coding assistant enough context to
 continue the AI research work without needing the full chat history.
+
+## Project Explained Clearly
+
+This project is about construction progress tracking for a bridge.
+
+The client has drone footage of a bridge construction site and a final bridge
+design/model. The goal is to research whether AI can help compare the current
+real-world construction state against the planned/final bridge state.
+
+Plain-language version:
+
+```text
+We want to know how much of the bridge that should exist in the final model
+already exists in the real world.
+```
+
+The ideal final system would work like this:
+
+```text
+1. The client flies a drone over the bridge construction site.
+2. The system converts the drone/LiDAR/photogrammetry data into a current 3D
+   point cloud.
+3. The final BIM/IFC/3D bridge model is also converted into a reference point
+   cloud.
+4. The two point clouds are aligned.
+5. The system checks which bridge sections overlap, which sections are missing,
+   and which points are noise or temporary construction objects.
+6. The result becomes a progress report per bridge section/component.
+```
+
+Important distinction:
+
+```text
+The project is not just "detect objects in drone images".
+The real problem is comparing current as-built geometry with planned final
+geometry.
+```
+
+Why 2D segmentation is not enough:
+
+- it can show visible masks in images
+- it does not know exact 3D bridge section positions
+- it cannot reliably measure geometric completion by itself
+- it struggles to distinguish permanent bridge structure from temporary
+  equipment/formwork/traffic
+
+Why 3D point clouds are the stronger direction:
+
+- a point cloud can represent the current physical bridge shape
+- the final model can also be sampled into a point cloud
+- overlap/distance comparison can be measured numerically
+- progress can be reported per section if the final model is split or annotated
+
+The current practical goal is not to deliver a production system, but to produce
+a clear feasibility study:
+
+```text
+Which AI/3D approaches work on the available data, what are their limitations,
+and what would a real implementation team need to collect better data and build
+the system properly?
+```
 
 ## Project Direction
 
@@ -35,6 +96,153 @@ The main insight so far:
 The hardest part is not only choosing an AI model. The hardest part is getting
 repeatable, high-quality drone data that can be reconstructed and aligned with
 the final model.
+```
+
+## Current Main Strategy As Of 2026-06-11
+
+The current best project direction is point-cloud comparison, not pure 2D
+segmentation.
+
+Target workflow:
+
+```text
+current drone/LiDAR/photogrammetry data -> current point cloud
+final BIM/IFC/3D bridge model -> final reference point cloud
+align current point cloud to final point cloud
+compare overlap / missing geometry / distance differences per bridge section
+```
+
+This is the most realistic research direction because bridge progress is a 3D
+problem:
+
+- is this bridge part present?
+- is this deck section built?
+- is this support/column visible?
+- how much of the final geometry overlaps with the current reconstruction?
+- which final model regions are still missing in the current scan?
+
+Segmentation should now be treated as supporting evidence, not the main progress
+measurement method.
+
+Recommended production-style architecture:
+
+1. Generate the best possible current point cloud.
+   - best if available: real LiDAR scan
+   - second best: planned photogrammetry image capture
+   - useful research baseline: MASt3R-SLAM from drone video
+   - useful when data has good overlap: COLMAP
+2. Convert the final BIM/IFC/GLB/OBJ bridge model into a dense point cloud.
+3. Align current and final point clouds.
+   - start with manual control points
+   - then run ICP/registration
+4. Compare geometry.
+   - final-to-current distance: which planned parts are missing?
+   - current-to-final distance: what is noise, traffic, trees, or temporary work?
+5. Report progress by bridge section/component, not as one global percentage.
+
+Important phrasing for client/teacher:
+
+```text
+The most accurate path is to compare a current point cloud against a point cloud
+sampled from the final BIM model. The quality of the result depends mostly on
+the quality and repeatability of the current scan.
+```
+
+## LiDAR Clarification
+
+Normal drone footage cannot be converted into a real LiDAR scan.
+
+Reason:
+
+```text
+LiDAR measures real distances with laser pulses. Normal RGB video only contains
+pixels, so depth must be estimated rather than measured.
+```
+
+What is possible from video:
+
+- COLMAP / photogrammetry point cloud
+- MASt3R-SLAM point cloud
+- DUSt3R / MASt3R neural point cloud
+- depth-estimation-based pseudo point cloud
+
+These are LiDAR-like point clouds, but they are not as accurate as real LiDAR.
+
+If the client has LiDAR data, ask for it. Useful formats:
+
+```text
+.las
+.laz
+.e57
+.ply
+.pcd
+```
+
+Best LiDAR workflow:
+
+```text
+real LiDAR scan -> current point cloud
+final BIM model -> final point cloud
+manual/control-point alignment -> ICP refinement -> overlap/progress analysis
+```
+
+MASt3R-SLAM does not directly fuse LiDAR in the current local setup. The local
+repo supports RGB video/image folders and RealSense/TUM-RGBD-style examples, but
+not a direct "feed LiDAR into MASt3R-SLAM" workflow. LiDAR should be used as a
+separate stronger geometry source or alignment reference.
+
+How to explain MASt3R-SLAM vs COLMAP:
+
+```text
+MASt3R-SLAM worked better on imperfect video because it is neural and more
+flexible. It can estimate dense structure from difficult footage. COLMAP is more
+strict and depends on reliable feature matching, so it needs better planned
+photogrammetry data. More MASt3R points does not automatically mean more
+accuracy; it can also include trees, roads, buildings, traffic, and noisy depth.
+```
+
+## Client Meeting Questions
+
+Ask the client for:
+
+1. Final bridge model:
+   - BIM
+   - IFC
+   - GLB/GLTF
+   - OBJ
+   - DWG
+   - Revit export
+2. Any current or historical LiDAR scans.
+3. Drone metadata:
+   - GPS
+   - IMU
+   - camera intrinsics/calibration
+   - flight path logs
+4. Whether future drone flights can follow a fixed repeatable path.
+5. Whether the drone can capture planned high-overlap photos instead of only
+   video.
+6. Bridge sections/phases they care about:
+   - deck sections
+   - columns/supports
+   - formwork
+   - road surface
+   - ramps
+   - temporary structures
+7. Examples of what the client considers:
+   - completed
+   - in progress
+   - not started
+8. Whether they can provide a section plan or construction schedule linked to
+   the final model.
+
+Good client-facing summary:
+
+```text
+Our tests show that AI reconstruction is possible, but the reliable solution is
+not just choosing a model. We need a repeatable data capture process and a final
+reference model. The strongest direction is point-cloud comparison: create a
+current point cloud from drone/LiDAR data, sample the final BIM model into a
+reference point cloud, align both, and measure overlap per bridge section.
 ```
 
 ## Current High-Level Recommendation
@@ -543,31 +751,42 @@ Then rerun:
 - MASt3R-SLAM
 - Nerfstudio/Splatfacto if enough poses register
 
-### Task 2: Manual Frame Experiment
+### Task 2: Repeat Manual Frame Experiments On Better Segments
 
-Extract around 10 non-consecutive but overlapping good frames and inspect them
-manually.
-
-Goal:
+The first manual 10-frame experiment has already been done:
 
 ```text
-Check whether carefully selected frames give better point clouds than automatic
-frame extraction.
+AI/docs/manual_frame_reconstruction_testing.md
+AI/outputs/manual10_colmap_bridgevid2_s22/
 ```
 
-This matches the teacher note: "maybe take 10 frames not consecutive and see if
-they make a point cloud, then manually match."
+Result:
 
-### Task 3: Better Current-Vs-Final Alignment
+```text
+10 selected frames
+10 registered COLMAP images
+10911 sparse points
+```
 
-Improve comparison with the final model by adding manual control points.
+Next: repeat this on other promising bridge-only segments and compare which
+segment gives the cleanest point cloud.
+
+### Task 3: Point Cloud Comparison Against Final BIM Model
+
+This is now the main AI/3D direction.
 
 Recommended process:
 
-1. Open current point cloud and final bridge model.
-2. Pick matching bridge landmarks manually.
-3. Estimate transform.
-4. Compare only bridge deck/columns, not the whole scene.
+1. Convert final BIM/IFC/GLB/OBJ bridge model into a dense point cloud.
+2. Choose the best current point cloud:
+   - LiDAR if the client has it
+   - MASt3R-SLAM point cloud
+   - COLMAP point cloud from good selected frames
+3. Pick matching bridge landmarks manually.
+4. Estimate transform.
+5. Run ICP refinement.
+6. Compare only bridge deck/columns/known sections, not the whole scene.
+7. Report missing/overlapping geometry per bridge section.
 
 ### Task 4: Define A Future Drone Flight Plan
 
@@ -614,6 +833,8 @@ ai-vslam-gaussian-splat-test
 Recent important commit:
 
 ```text
+7702353 Document manual frame reconstruction test
+828563e Add AI research handoff document
 625e91b Retry Nerfstudio Splatfacto export
 ```
 
@@ -629,6 +850,7 @@ AI/docs/ai_handoff_for_claude.md
 AI/docs/interim_ai_brief.md
 AI/docs/vslam_gaussian_splat_testing.md
 AI/docs/nerfstudio_splatfacto_testing.md
+AI/docs/manual_frame_reconstruction_testing.md
 ```
 
 Then inspect:
@@ -646,6 +868,8 @@ AI/outputs/mast3r_slam_bridge1_fast/
 AI/outputs/colmap_mesh_bridgevid2_s22_full/
 AI/outputs/nerfstudio_bridgevid1_trained_splat/
 AI/outputs/comparison_mast3r_bridge1_vs_final/
+AI/outputs/manual10_colmap_bridgevid2_s22/
+AI/outputs/manual10_twoview_bridgevid2_1320_1725/
 AI/outputs/bridgevid1_sam2_overlay_video/
 AI/outputs/bridgevid1_full_sam2_auto/
 ```
