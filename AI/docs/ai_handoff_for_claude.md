@@ -841,6 +841,45 @@ Recent important commit:
 Generated outputs are generally not committed. Keep code/docs/config commits
 small and do not add huge model/video/output files unless explicitly requested.
 
+## Trello Tracking Rule
+
+Keep Trello updated while working.
+
+Board:
+
+```text
+FPT-AI
+```
+
+Current pattern:
+
+- add/update cards in the correct daily list, for example `Wednesday 10/06`
+- include story points in the card title, for example `(1)`, `(2)`, `(3)`
+- use the `AI` label for AI work
+- add `Testing`, `Documentation`, or `Scrum` labels when relevant
+- describe:
+  - what was tried
+  - input data used
+  - output folder/files
+  - result
+  - conclusion / next step
+
+Trello access already works locally:
+
+```text
+Claude Code MCP server: trello
+Command: npx -y atlassian-trello-mcp
+Codex can also use the Trello REST API with TRELLO_API_KEY and TRELLO_TOKEN.
+```
+
+Important:
+
+```text
+After every meaningful experiment, setup task, documentation update, or research
+decision, create or update a Trello card so daily progress tracking stays
+accurate.
+```
+
 ## Key Files To Read First
 
 Start with:
