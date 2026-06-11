@@ -17,6 +17,8 @@ def compare_reconstruction_to_model(
     sections: int = 10,
     icp_iterations: int = 40,
     built_threshold: float = 0.04,
+    control_points_current: Path | None = None,
+    control_points_reference: Path | None = None,
 ) -> dict[str, object]:
     """Compare an as-built reconstruction with a completed bridge model.
 
@@ -48,16 +50,34 @@ def compare_reconstruction_to_model(
         seed=seed,
     )
 
-    current_norm, current_transform = _pca_normalize(current_points)
     model_norm, model_transform = _pca_normalize(model_points)
 
-    current_aligned, alignment_info = _best_sign_alignment(current_norm, model_norm, cKDTree)
-    current_aligned, icp_info = _trimmed_icp(
-        current_aligned,
-        model_norm,
-        cKDTree,
-        iterations=icp_iterations,
-    )
+    if control_points_current is not None and control_points_reference is not None:
+        # Calibrated path: the user-picked landmark pairs define the transform
+        # into the reference frame; PCA/sign-flip guessing is skipped and ICP
+        # may only refine without rescaling.
+        current_in_ref, alignment_info = _control_point_alignment(
+            current_points,
+            control_points_current,
+            control_points_reference,
+        )
+        current_aligned = _apply_normalization(current_in_ref, model_transform)
+        current_aligned, icp_info = _trimmed_icp(
+            current_aligned,
+            model_norm,
+            cKDTree,
+            iterations=icp_iterations,
+            allow_scale=False,
+        )
+    else:
+        current_norm, current_transform = _pca_normalize(current_points)
+        current_aligned, alignment_info = _best_sign_alignment(current_norm, model_norm, cKDTree)
+        current_aligned, icp_info = _trimmed_icp(
+            current_aligned,
+            model_norm,
+            cKDTree,
+            iterations=icp_iterations,
+        )
     alignment_info["icp"] = icp_info
 
     tree = cKDTree(model_norm)
@@ -223,7 +243,53 @@ def _pca_normalize(points: np.ndarray) -> tuple[np.ndarray, dict[str, object]]:
         "center": [round(float(value), 6) for value in center],
         "scale_p95_radius": round(scale, 6),
         "eigenvalues": [round(float(value), 6) for value in values],
+        "_vectors": vectors,
+        "_center": center,
+        "_scale": scale,
     }
+
+
+def _apply_normalization(points: np.ndarray, transform: dict[str, object]) -> np.ndarray:
+    """Map raw-frame points into the normalized frame of a _pca_normalize call."""
+    return ((points - transform["_center"]) @ transform["_vectors"]) / transform["_scale"]
+
+
+def _control_point_alignment(
+    points: np.ndarray,
+    control_points_current: Path,
+    control_points_reference: Path,
+) -> tuple[np.ndarray, dict[str, object]]:
+    """Transform points into the reference frame using picked landmark pairs."""
+    source = _load_control_points(control_points_current)
+    target = _load_control_points(control_points_reference)
+    if len(source) != len(target):
+        raise ValueError(
+            f"Control point counts differ: {len(source)} in {control_points_current} "
+            f"vs {len(target)} in {control_points_reference}. Pick the same landmarks in the same order."
+        )
+    if len(source) < 3:
+        raise ValueError("At least 3 control point pairs are required.")
+
+    scale, rotation, translation = _umeyama_similarity(source, target)
+    fitted = (scale * (rotation @ source.T)).T + translation
+    residuals = np.linalg.norm(fitted - target, axis=1)
+    transformed = (scale * (rotation @ points.T)).T + translation
+    return transformed, {
+        "method": "control_points",
+        "pairs": len(source),
+        "scale": round(scale, 6),
+        "rms_error": round(float(np.sqrt(np.mean(residuals**2))), 4),
+        "max_error": round(float(residuals.max()), 4),
+        "per_point_error": [round(float(value), 4) for value in residuals],
+    }
+
+
+def _load_control_points(path: Path) -> np.ndarray:
+    payload = json.loads(Path(path).read_text(encoding="utf-8"))
+    points = np.asarray(payload["points"], dtype=np.float64)
+    if points.ndim != 2 or points.shape[1] != 3:
+        raise ValueError(f"{path} does not contain an Nx3 'points' list")
+    return points
 
 
 def _best_sign_alignment(current: np.ndarray, model: np.ndarray, cKDTree) -> tuple[np.ndarray, dict[str, object]]:
@@ -276,6 +342,7 @@ def _trimmed_icp(
     trim_pct: float = 70.0,
     sample_size: int = 40_000,
     seed: int = 7,
+    allow_scale: bool = True,
 ) -> tuple[np.ndarray, dict[str, object]]:
     """Refine alignment with a similarity-transform ICP on the best-matching points.
 
@@ -306,6 +373,8 @@ def _trimmed_icp(
             break
 
         scale, rotation, translation = _umeyama_similarity(sample[keep], model[indices[keep]])
+        if not allow_scale:
+            scale = 1.0
         scale = float(np.clip(scale, 0.95, 1.05))
         if not (0.5 <= scale_total * scale <= 2.0):
             scale = 1.0

@@ -270,6 +270,8 @@ def main() -> None:
     compare_3d_parser.add_argument("--sections", type=int, default=10, help="Number of slices along the bridge axis for per-section progress")
     compare_3d_parser.add_argument("--icp-iterations", type=int, default=40, help="Trimmed ICP refinement iterations (0 disables ICP)")
     compare_3d_parser.add_argument("--built-threshold", type=float, default=0.04, help="Normalized distance below which a model point counts as built")
+    compare_3d_parser.add_argument("--control-points-current", type=Path, default=None, help="JSON of picked landmarks on the current cloud (pick_control_points.py)")
+    compare_3d_parser.add_argument("--control-points-reference", type=Path, default=None, help="JSON of the same landmarks picked on the reference, same order")
 
     splat_parser = subparsers.add_parser(
         "pointcloud-to-gaussian-splat",
@@ -581,8 +583,12 @@ def main() -> None:
             sections=args.sections,
             icp_iterations=args.icp_iterations,
             built_threshold=args.built_threshold,
+            control_points_current=args.control_points_current,
+            control_points_reference=args.control_points_reference,
         )
         progress = summary["progress_estimate"]
+        if summary["alignment"].get("method") == "control_points":
+            console.print(f"[green]Control-point RMS error:[/green] {summary['alignment']['rms_error']} (max {summary['alignment']['max_error']})")
         console.print(f"[green]Median distance:[/green] {summary['distance_median']}")
         console.print(f"[green]P90 distance:[/green] {summary['distance_p90']}")
         console.print(f"[green]Close coverage:[/green] {summary['coverage_close_pct']}%")
