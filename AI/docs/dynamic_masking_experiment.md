@@ -80,21 +80,68 @@ Every section is equal or better. The weakly covered bridge end stays weakly
 covered (the video simply does not capture it well); that is correct behavior,
 not a masking failure.
 
+## Black Point Filtering (Follow-Up, Same Day)
+
+Viewing the masked point cloud in MeshLab showed that the vehicles were gone,
+but MASt3R-SLAM still hallucinated depth for the blacked-out pixels, creating
+black streaks/beams in the cloud.
+
+Because the mask fill is pure black, those points are removable by color:
+
+```text
+AI/scripts/remove_black_points.py --threshold 20
+```
+
+Color histogram confirmed the threshold: 4.15% of points have max RGB channel
+below 5 (matching the 4.94% mean masked pixel ratio), while real dark scene
+content only starts around brightness 20-30. Filtering at 20 removed 187,112
+points (5.16%), leaving 3,439,621.
+
+```text
+AI/outputs/mast3r_slam_bridge1_masked/pointcloud_filtered.ply
+AI/outputs/comparison_mast3r_bridge1_masked_filtered_vs_bridgepointcloud/
+```
+
+Corrected comparison (filtered cloud, aligned in baseline orientation):
+
+```text
+                                unmasked baseline    masked+filtered
+model built (0.04)              82.28%               81.07%
+model built strict (0.02)       62.85%               61.88%
+model built loose (0.08)        91.99%               94.16%
+likely non-bridge points        7.51%                6.32%
+```
+
+Important correction to the unfiltered result above: the masked-but-unfiltered
+cloud read 87.23% built, but part of that gain came from black hallucinated
+points landing near the model and counting as false "as-built evidence".
+After filtering, the built percentage returns to baseline level while the
+cloud is genuinely cleaner (lowest non-bridge percentage of all runs, best
+loose coverage). The correct workflow is therefore always:
+
+```text
+mask -> reconstruct -> remove black points -> compare
+```
+
 ## Interpretation
 
 ```text
-1. Masking moving traffic before reconstruction measurably improves both the
-   reconstruction (more keyframes registered, fewer non-bridge points) and
-   the progress comparison (strict built +5.7 points). Segmentation has a
-   real production role as a pre-reconstruction cleaning step, not as the
+1. Masking moving traffic improves the reconstruction itself: more keyframes
+   registered (38 vs 30), and after black-point filtering the cleanest cloud
+   of all runs (6.32% non-bridge points vs 7.51% baseline). Segmentation has
+   a real production role as a pre-reconstruction cleaning step, not as the
    progress measurement itself.
-2. The lengthwise mirror flip between runs confirms a known limitation:
+2. Blackout masking alone is not enough: the reconstructor hallucinates
+   geometry in the blacked-out regions, and those points can inflate the
+   progress metric. The black-point filter must always follow. A production
+   system would instead pass the masks into the reconstruction so masked
+   pixels are skipped entirely.
+3. The lengthwise mirror flip between runs confirms a known limitation:
    bridges are nearly symmetric along their length, so unsupervised
    PCA+ICP alignment cannot reliably pick the orientation. Production needs
-   one manual control point (or GPS) to fix the bridge direction.
-3. Part of the improvement comes from MASt3R-SLAM registering more keyframes
-   (38 vs 30) on the masked frames - masking traffic also helps tracking,
-   not only the final cloud.
+   one manual control point (or GPS) to fix the bridge direction. Section
+   percentages also jitter a few points between runs purely from alignment,
+   so only large per-section differences are meaningful.
 ```
 
 ## How To Reproduce
@@ -109,9 +156,15 @@ AI/.venv-sam3/Scripts/python.exe AI/scripts/mask_dynamic_objects.py \
 bash AI/scripts/run_mast3r_bridge1_masked.sh
 # results land in AI/.external/MASt3R-SLAM/logs/bridge1_fast_masked/
 
-# 3. compare against the completed bridge cloud
+# 3. remove hallucinated black points (Windows, AI/.venv-sam3 venv)
+AI/.venv-sam3/Scripts/python.exe AI/scripts/remove_black_points.py \
+  --input AI/outputs/mast3r_slam_bridge1_masked/pointcloud.ply \
+  --output AI/outputs/mast3r_slam_bridge1_masked/pointcloud_filtered.ply \
+  --threshold 20
+
+# 4. compare against the completed bridge cloud
 PYTHONPATH=AI/src python -m ftp_ai.cli compare-3d-model \
-  --current AI/outputs/mast3r_slam_bridge1_masked/pointcloud.ply \
+  --current AI/outputs/mast3r_slam_bridge1_masked/pointcloud_filtered.ply \
   --final-model AI/data/BridgePointcloud/coverage_result.ply \
-  --output AI/outputs/comparison_mast3r_bridge1_masked_vs_bridgepointcloud
+  --output AI/outputs/comparison_mast3r_bridge1_masked_filtered_vs_bridgepointcloud
 ```
