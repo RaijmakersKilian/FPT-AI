@@ -48,32 +48,34 @@ def seg_color(pct):
 
 # Elke entry: (naam_bevat, groepslabel_NL, groepslabel_EN)
 NAME_MAPPING = [
-    # Rijdek
-    ("KCPT_BAN MAT",              "Rijdek",               "Road surface"),
-    ("KCPT_LOP",                  "Rijdek (groot stuk)",  "Road surface (large)"),
-    # Draagbalken onder brug
-    ("KCPT_I24",                  "Draagbalk",            "Support beam"),
-    ("KCPT_I33",                  "Draagbalk",            "Support beam"),
-    ("KCPD_XA MU",                "Gewelfd steunstuk",    "Curved support"),
-    # Steunpilaren
-    ("KCPD_COC",                  "Steunpilaar",          "Pillar"),
-    ("KCPD_THAN TRU",             "Ovale steunpilaar",    "Oval pillar"),
-    ("KCPD_THAN MO",              "Buitensteun",          "Outer support"),
-    # Steunconstructie
-    ("KCPT_K101",                 "Tussensteun weg/pijler","Road-pillar connector"),
-    ("KCPT_Ki",                   "Wegsteun",             "Road support"),
-    ("KCPT_DOT TREN",             "Grote wegfundering",   "Large road foundation"),
-    # Ondervlak / platen
-    ("KCPD_BTL",                  "Ondervlak dek",        "Bottom slab"),
-    ("KCPD_BE TRU",               "Volle onderdekplaat",  "Full bottom slab"),
-    ("KCPD_BE MO",                "Eindplaat",            "End plate"),
-    # Eindconstructie
-    ("KCPD_TUONG",                "Zijwand eindstuk",     "End side wall"),
-    ("KCK_BAN QUA",               "Eindtrede",            "End step"),
-    ("KCK_TUONG CHAN",            "Eindwand",             "End wall"),
-    # Leuning
-    ("KCPT_GO LAN CAN",           "Leuningsteun",         "Railing support"),
-    ("LOAI1_Thep hop",            "Leuning (bovenbalk)",  "Top railing bar"),
+    # Mặt cầu (road deck)
+    ("KCPT_BAN MAT",              "Bản mặt cầu",          "Road deck"),
+    ("KCPT_LOP",                  "Lớp mặt cầu",          "Road deck layer"),
+    # Dầm (beams)
+    ("KCPT_I24",                  "Dầm I",                "Support beam"),
+    ("KCPT_I33",                  "Dầm I",                "Support beam"),
+    ("KCPD_XA MU",                "Xà mũ",                "Column cap"),
+    # Trụ / mố (piers & abutments)
+    ("KCPD_COC",                  "Cọc móng",             "Pile"),
+    ("KCPD_THAN TRU",             "Thân trụ",             "Pier body"),
+    ("KCPD_THAN MO",              "Thân mố",              "Abutment body"),
+    # Kết cấu liên kết (connection structures)
+    ("KCPT_K101",                 "Kết cấu K101",         "Road-pier connector"),
+    ("KCPT_Ki",                   "Cấu kiện Ki",          "Road support element"),
+    ("KCPT_DOT TREN",             "Đốt trên",             "Upper segment"),
+    # Bản đáy / bê tông (bottom slabs & concrete)
+    ("KCPD_BTL",                  "Bản tấm lót",          "Bottom slab"),
+    ("KCPD_BE TRU",               "Bê tông trụ",          "Pier concrete"),
+    ("KCPD_BE MO",                "Bê tông mố",           "Abutment concrete"),
+    # Đầu cầu (bridge ends)
+    ("KCPD_TUONG",                "Tường đầu cầu",        "End wall"),
+    ("KCK_BAN QUA",               "Bản quá độ",           "Transition slab"),
+    ("KCK_TUONG CHAN",             "Tường chắn",           "Retaining wall"),
+    # Lan can (railing)
+    ("KCPT_GO LAN CAN",           "Gờ lan can",           "Railing post"),
+    ("LOAI1_Thep hop",            "Thép hộp lan can",     "Railing bar"),
+    # Bê tông lót (approach)
+    ("KCK_M2-BAN QUA DO",         "Bê tông lót",          "Approach concrete"),
 ]
 
 

@@ -25,7 +25,10 @@ async function initViewer() {
   renderer.setSize(w, h);
   renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
 
-  scene.add(new THREE.AmbientLight(0xffffff, 1.0));
+  scene.add(new THREE.AmbientLight(0xffffff, 0.6));
+  const sun = new THREE.DirectionalLight(0xffffff, 1.4);
+  sun.position.set(200, 400, 300);
+  scene.add(sun);
 
   const controls = new OrbitControls(camera, renderer.domElement);
   controls.enableDamping = true;

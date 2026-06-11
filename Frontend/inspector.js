@@ -9,22 +9,53 @@ async function populateInspector() {
     summary = data.summary || null;
 
     if (data.results) {
-      // Per-type (coverage_per_type.py): { group, n_elements, coverage }
-      categories = data.results.map(row => {
-        const en = (row.group.match(/\[(.+?)\]/) || [])[1] || row.group;
-        return {
-          name: en,
-          meta: `${row.n_elements} el · ${(row.coverage * 100).toFixed(0)}%`,
-          pct:  row.coverage,
-        };
-      });
+      // Per-type: prefer [Dutch  [English]] mapped names; also include unmapped Missing items
+      const mapped = new Map();
+      for (const row of data.results) {
+        const m = row.group.match(/^(.+?)\s+\[(.+?)\]$/);
+        if (m) {
+          // Mapped group — deduplicate by English name
+          const key = m[2];
+          if (!mapped.has(key)) {
+            mapped.set(key, { name: m[1], n_elements: 0, coverage_sum: 0, count: 0 });
+          }
+          const g = mapped.get(key);
+          g.n_elements   += row.n_elements;
+          g.coverage_sum += row.coverage;
+          g.count        += 1;
+        } else if (row.coverage < 0.30) {
+          // Unmapped but Missing — show with cleaned raw name
+          const raw = row.group.split(':')[0].trim();
+          if (!raw || raw === ':') continue;
+          const key = raw;
+          if (!mapped.has(key)) {
+            mapped.set(key, { name: raw, n_elements: 0, coverage_sum: 0, count: 0 });
+          }
+          const g = mapped.get(key);
+          g.n_elements   += row.n_elements;
+          g.coverage_sum += row.coverage;
+          g.count        += 1;
+        }
+      }
+      categories = [...mapped.values()].map(g => ({
+        name: g.name,
+        meta: `${g.n_elements} el · ${(g.coverage_sum / g.count * 100).toFixed(0)}%`,
+        pct:  g.coverage_sum / g.count,
+      }));
     } else if (data.segments) {
       // Per-segment (coverage_analysis.py): { seg, from_m, to_m, coverage_pct }
-      categories = data.segments.map(s => ({
-        name: `Segment ${s.seg + 1}`,
-        meta: `${s.from_m.toFixed(0)}–${s.to_m.toFixed(0)} m · ${s.coverage_pct}%`,
-        pct:  s.coverage_pct / 100,
-      }));
+      const n = data.segments.length;
+      categories = data.segments.map(s => {
+        let label;
+        if (s.seg === 0)     label = 'Linker oever';
+        else if (s.seg === n - 1) label = 'Rechter oever';
+        else                 label = `Overspanning ${s.seg}`;
+        return {
+          name: label,
+          meta: `${Math.round(s.from_m)}–${Math.round(s.to_m)} m · ${s.coverage_pct}%`,
+          pct:  s.coverage_pct / 100,
+        };
+      });
     }
   } catch (e) {
     console.warn('Coverage data niet geladen:', e);

@@ -22,7 +22,8 @@ def _find(filename: str) -> Path:
 @router.get("/data")
 def coverage_data():
     """Coverage JSON (per-type of per-segment)."""
-    # Prefer per-type results if available
+    # coverage_results.json = per-type with proper category names (preferred),
+    # coverage_data.json = per-segment fallback
     for name in ("coverage_results.json", "coverage_data.json"):
         p = _FRONTEND / name
         if p.exists():
@@ -34,9 +35,15 @@ def coverage_data():
 @router.get("/pointcloud")
 def coverage_pointcloud():
     """Gekleurde coverage PLY voor Three.js PLYLoader."""
-    path = _find("coverage_result.ply")
-    return FileResponse(
-        path=str(path),
-        media_type="application/octet-stream",
-        filename="coverage_result.ply",
-    )
+    # coverage_analysis.py writes coverage_result.ply (preferred),
+    # coverage_per_type.py writes coverage_colored.ply (fallback)
+    for name in ("coverage_result.ply", "coverage_colored.ply"):
+        for d in (_FRONTEND, _XR_DIR):
+            p = d / name
+            if p.exists():
+                return FileResponse(
+                    path=str(p),
+                    media_type="application/octet-stream",
+                    filename=name,
+                )
+    raise HTTPException(status_code=404, detail="Geen coverage PLY gevonden")
