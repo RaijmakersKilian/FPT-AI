@@ -553,6 +553,19 @@ camera motion while reconstructing the scene. MASt3R-SLAM is one specific vSLAM
 system we tested.
 ```
 
+Update 2026-06-11: masking moving traffic out of the frames with SAM3 before
+running MASt3R-SLAM measurably improves the reconstruction and the progress
+comparison (38 vs 30 keyframes, strict built +5.7 points, fewer non-bridge
+points). See `AI/docs/dynamic_masking_experiment.md`. This gives segmentation
+its production role: pre-reconstruction cleaning, not progress measurement.
+
+```text
+AI/scripts/mask_dynamic_objects.py
+AI/scripts/run_mast3r_bridge1_masked.sh
+AI/outputs/mast3r_slam_bridge1_masked/
+AI/outputs/comparison_mast3r_bridge1_masked_vs_bridgepointcloud/
+```
+
 ### DUSt3R / MASt3R Point Clouds
 
 Earlier DUSt3R/MASt3R-style outputs exist:
@@ -936,6 +949,7 @@ AI/docs/vslam_gaussian_splat_testing.md
 AI/docs/nerfstudio_splatfacto_testing.md
 AI/docs/manual_frame_reconstruction_testing.md
 AI/docs/method_comparison_table.md
+AI/docs/dynamic_masking_experiment.md
 ```
 
 Then inspect:
