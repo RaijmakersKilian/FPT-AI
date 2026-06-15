@@ -37,6 +37,7 @@ def main() -> None:
     parser.add_argument("--subsample", type=int, default=15)
     parser.add_argument("--skip-existing", action="store_true", help="Skip videos that already have a REPORT.md")
     parser.add_argument("--skip-vision", action="store_true", help="Skip the slow vision stage (get the progress curve faster)")
+    parser.add_argument("--no-mask", action="store_true", help="Fast mode: SLAM directly on each video, no per-frame SAM masking (much faster)")
     parser.add_argument("--continue-on-error", action="store_true", default=True)
     args = parser.parse_args()
 
@@ -60,6 +61,8 @@ def main() -> None:
             cmd += ["--final-model", str(args.final_model)]
         if args.skip_vision:
             cmd += ["--skip-vision"]
+        if args.no_mask:
+            cmd += ["--no-mask"]
         try:
             subprocess.run(cmd, check=True)
         except subprocess.CalledProcessError as exc:

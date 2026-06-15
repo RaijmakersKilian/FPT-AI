@@ -40,6 +40,7 @@ sys.path.insert(0, str(AI_DIR / "src"))
 PYTHON = sys.executable
 SLAM_DIR = AI_DIR / ".external" / "MASt3R-SLAM"
 SLAM_SCRIPT = SCRIPT_DIR / "run_mast3r_bridge1_masked.sh"
+FAST_SLAM_SCRIPT = SCRIPT_DIR / "run_mast3r_bridge1_fast.sh"
 
 
 def main() -> None:
@@ -53,6 +54,7 @@ def main() -> None:
     parser.add_argument("--wsl-distro", default="Ubuntu-24.04")
     parser.add_argument("--anchor-current", type=Path, default=None, help="Optional anchor JSON to lock bridge orientation (pick_control_points.py)")
     parser.add_argument("--anchor-reference", type=Path, default=None)
+    parser.add_argument("--no-mask", action="store_true", help="Fast mode: skip SAM traffic masking, run SLAM directly on the video (much faster, slightly noisier)")
     parser.add_argument("--skip-mask", action="store_true")
     parser.add_argument("--skip-slam", action="store_true", help="Reuse an existing 02_slam/pointcloud.ply")
     parser.add_argument("--skip-clean", action="store_true")
@@ -79,12 +81,14 @@ def main() -> None:
     compare_dir = run_dir / "04_comparison"
     vision_dir = run_dir / "05_vision"
 
+    if args.no_mask:
+        args.skip_mask = True
     if not args.skip_mask:
         _stage_mask(args, frames_dir, manifest)
     if not args.skip_slam:
         _stage_slam(args, masked_dir, cloud_dir, name, manifest)
     if not args.skip_clean:
-        _stage_clean(cloud_dir, clean_dir, manifest)
+        _stage_clean(cloud_dir, clean_dir, manifest, no_black=args.no_mask)
     if args.final_model and not args.skip_compare:
         _stage_compare(args, clean_dir, compare_dir, manifest)
     if not args.skip_vision:
@@ -113,18 +117,22 @@ def _stage_mask(args, frames_dir: Path, manifest: dict) -> None:
 
 def _stage_slam(args, masked_dir: Path, cloud_dir: Path, name: str, manifest: dict) -> None:
     print("[2/6] MASt3R-SLAM reconstruction (WSL)...")
-    if not masked_dir.exists():
-        manifest["slam"] = {"status": "skipped", "reason": "no masked frames"}
-        print("  no masked frames; skipping")
-        return
     start = time.time()
     save_as = f"pipeline_{name}"
-    frames_wsl = _to_wsl(masked_dir)
-    script_wsl = _to_wsl(SLAM_SCRIPT)
-    cmd = [
-        "wsl", "-d", args.wsl_distro, "-u", "root", "-e", "bash", "-lc",
-        f"FRAMES='{frames_wsl}' SAVE_AS='{save_as}' bash '{script_wsl}'",
-    ]
+    if getattr(args, "no_mask", False):
+        # Fast path: feed the video straight to MASt3R-SLAM (subsamples internally).
+        video_wsl = _to_wsl(args.video)
+        script_wsl = _to_wsl(FAST_SLAM_SCRIPT)
+        inner = f"VIDEO='{video_wsl}' SAVE_AS='{save_as}' bash '{script_wsl}'"
+    else:
+        if not masked_dir.exists():
+            manifest["slam"] = {"status": "skipped", "reason": "no masked frames"}
+            print("  no masked frames; skipping")
+            return
+        frames_wsl = _to_wsl(masked_dir)
+        script_wsl = _to_wsl(SLAM_SCRIPT)
+        inner = f"FRAMES='{frames_wsl}' SAVE_AS='{save_as}' bash '{script_wsl}'"
+    cmd = ["wsl", "-d", args.wsl_distro, "-u", "root", "-e", "bash", "-lc", inner]
     try:
         _run(cmd)
     except subprocess.CalledProcessError as exc:
@@ -146,18 +154,22 @@ def _stage_slam(args, masked_dir: Path, cloud_dir: Path, name: str, manifest: di
     manifest["slam"] = {"status": "ok", "points": _count_ply_vertices(cloud_dir / "pointcloud.ply"), "seconds": round(time.time() - start)}
 
 
-def _stage_clean(cloud_dir: Path, clean_dir: Path, manifest: dict) -> None:
+def _stage_clean(cloud_dir: Path, clean_dir: Path, manifest: dict, no_black: bool = False) -> None:
     cloud = cloud_dir / "pointcloud.ply"
     if not cloud.exists():
         manifest["clean"] = {"status": "skipped", "reason": "no point cloud"}
         print("[3/6] Cleaning skipped (no point cloud)")
         return
-    print("[3/6] Cleaning point cloud (blackout + smear/noise)...")
+    print("[3/6] Cleaning point cloud (smear/noise)...")
     clean_dir.mkdir(parents=True, exist_ok=True)
-    filtered = clean_dir / "pointcloud_filtered.ply"
     clean = clean_dir / "pointcloud_clean.ply"
-    _run([PYTHON, str(SCRIPT_DIR / "remove_black_points.py"), "--input", str(cloud), "--output", str(filtered), "--threshold", "20"])
-    _run([PYTHON, str(SCRIPT_DIR / "clean_pointcloud.py"), "--input", str(filtered), "--output", str(clean)])
+    if no_black:
+        # No masking blackout to remove; just geometric cleaning.
+        _run([PYTHON, str(SCRIPT_DIR / "clean_pointcloud.py"), "--input", str(cloud), "--output", str(clean)])
+    else:
+        filtered = clean_dir / "pointcloud_filtered.ply"
+        _run([PYTHON, str(SCRIPT_DIR / "remove_black_points.py"), "--input", str(cloud), "--output", str(filtered), "--threshold", "20"])
+        _run([PYTHON, str(SCRIPT_DIR / "clean_pointcloud.py"), "--input", str(filtered), "--output", str(clean)])
     stats = _read_json(clean.with_suffix(".clean_stats.json"))
     manifest["clean"] = {"status": "ok", "points_out": stats.get("points_out"), "removed_pct": stats.get("removed_pct")}
 
