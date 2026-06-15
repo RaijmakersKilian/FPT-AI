@@ -48,6 +48,7 @@ Newest scripts (all run with the Windows env AI/.venv-sam3):
 
 ```text
 AI/scripts/run_bridge_ai_pipeline.py   - the product orchestrator (one command)
+AI/scripts/run_all_videos.py           - batch the pipeline over a video folder
 AI/scripts/mask_dynamic_objects.py     - SAM3 traffic masking on extracted frames
 AI/scripts/remove_black_points.py      - drop blacked-out hallucinated points
 AI/scripts/clean_pointcloud.py         - SOR + density smear/noise removal
@@ -72,16 +73,27 @@ AI/outputs/vision_compare/frame_00120/comparison_figure.jpg      (Track B figure
 AI/outputs/vision_compare/frame_00090/comparison_figure.jpg      (Track B figure)
 ```
 
-What is left / good next tasks for Codex (not started):
+Direction confirmed 2026-06-15 (user): the teacher's asks are done (Track A +
+Track B). The remaining AI job is to run MASt3R-SLAM + the full pipeline on ALL
+the client's videos (more arriving from Google Drive, ordered by date). The
+FRONTEND + SUPABASE is Andreas/Giada's responsibility - the AI side only
+produces files in a predictable structure (see AI/docs/ai_output_contract.md).
+
+What is left / good next tasks for Codex:
 
 ```text
-1. Run the full pipeline once end-to-end on BridgeVid1 and (separately)
-   Bridgevid2 to produce two clean REPORT.md runs for the presentation.
-2. Repeatability angle: compare the two videos' per-section numbers (the
-   teacher wants "multi-pass works with the same model" framed clearly).
-3. The future drone flight-plan doc (Task 4 below) - high-value, pure writing.
-4. Optional: a project-specific trained segmentation model would make Track B
-   automatic (open-vocabulary SAM is viewpoint-dependent; see vision doc).
+1. When the user adds the Google Drive videos, batch them:
+   AI/scripts/run_all_videos.py --video-dir <folder> --final-model <model>
+   -> one AI/outputs/runs/<name>/ per video + INDEX.md.
+2. We currently only have one date (27/12/2023, 3 videos). "Progress over time"
+   needs the new dated videos; the pipeline already supports one run per date.
+3. Hand outputs to the frontend team per AI/docs/ai_output_contract.md (the 5
+   key artifacts: clean cloud, coverage cloud, comparison json, overlay mp4,
+   manifest). Optional quick win: add a --web-export decimated PLY (~300k pts)
+   for smooth browser display if the frontend asks.
+4. The future drone flight-plan doc (Task 4 below) - high-value, pure writing.
+5. Optional: a project-specific trained detector would make Track B reliable
+   (open-vocabulary SAM3 is a demo, not certified; see vision doc).
 ```
 
 DO NOT reopen the 3D bridge-isolation crop (AI/docs/bridge_isolation_testing.md);
