@@ -36,6 +36,7 @@ def main() -> None:
     parser.add_argument("--output-root", type=Path, default=AI_DIR / "outputs" / "runs")
     parser.add_argument("--subsample", type=int, default=15)
     parser.add_argument("--skip-existing", action="store_true", help="Skip videos that already have a REPORT.md")
+    parser.add_argument("--skip-vision", action="store_true", help="Skip the slow vision stage (get the progress curve faster)")
     parser.add_argument("--continue-on-error", action="store_true", default=True)
     args = parser.parse_args()
 
@@ -46,7 +47,7 @@ def main() -> None:
 
     results = []
     for index, video in enumerate(videos, start=1):
-        name = _safe_name(video.stem)
+        name = _run_name(video)
         run_dir = args.output_root / name
         if args.skip_existing and (run_dir / "REPORT.md").exists():
             print(f"[{index}/{len(videos)}] {video.name}: already done, skipping")
@@ -57,6 +58,8 @@ def main() -> None:
         cmd = [PYTHON, str(PIPELINE), "--video", str(video), "--name", name, "--subsample", str(args.subsample)]
         if args.final_model:
             cmd += ["--final-model", str(args.final_model)]
+        if args.skip_vision:
+            cmd += ["--skip-vision"]
         try:
             subprocess.run(cmd, check=True)
         except subprocess.CalledProcessError as exc:
@@ -67,6 +70,15 @@ def main() -> None:
 
     _write_index(args.output_root, results)
     print(f"\nALL DONE. Index: {args.output_root / 'INDEX.md'}")
+
+
+def _run_name(video: Path) -> str:
+    """Clean run name from a video file, stripping double extensions like .MP4.mp4."""
+    stem = video.stem
+    for ext in (".MP4", ".mp4", ".MOV", ".mov", ".AVI", ".avi", ".MKV", ".mkv"):
+        if stem.endswith(ext):
+            stem = stem[: -len(ext)]
+    return _safe_name(stem)
 
 
 def _safe_name(stem: str) -> str:
