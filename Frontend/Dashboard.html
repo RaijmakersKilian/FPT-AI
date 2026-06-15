@@ -18,6 +18,7 @@
 }
 </script>
 <script src="thumbnails.js" defer></script>
+<script src="inspector.js" defer></script>
 <script type="module" src="viewer.js"></script>
 </head>
 
@@ -68,7 +69,7 @@
         </div>
         <div class="video-frame">
           <!-- Stylised aerial cityscape -->
-            <video id="main-video" controls muted src="/Frontend/Video's/Kopie van DJI_0066.MP4.mp4"></video>
+            <video id="main-video" controls muted src="Video's/Kopie van DJI_0072.MP4.mp4"></video>
           
         </div>
       </div>
@@ -79,24 +80,24 @@
           <span class="card-title">Video timeline archive</span>
         </div>
         <div class="thumbs" id="thumbs">
-          <div class="thumb" data-src="/Frontend/Video's/Kopie van DJI_0066.MP4.mp4" data-name="DJI_0066">
-            <div class="frame"><video class="thumb-video" muted playsinline preload="metadata" src="/Frontend/Video's/Kopie van DJI_0066.MP4.mp4"></video></div>
+          <div class="thumb" data-src="Video's/Kopie van DJI_0072.MP4.mp4" data-name="DJI_0072">
+            <div class="frame"><video class="thumb-video" muted playsinline preload="metadata" src="Video's/Kopie van DJI_0072.MP4.mp4"></video></div>
             <div class="date">October 21</div>
           </div>
-          <div class="thumb" data-src="/Frontend/Video's/Kopie van DJI_0072.MP4.mp4" data-name="DJI_0072">
-            <div class="frame"><video class="thumb-video" muted playsinline preload="metadata" src="/Frontend/Video's/Kopie van DJI_0072.MP4.mp4"></video></div>
+          <div class="thumb" data-src="Video's/Kopie van DJI_0072.MP4.mp4" data-name="DJI_0072">
+            <div class="frame"><video class="thumb-video" muted playsinline preload="metadata" src="Video's/Kopie van DJI_0072.MP4.mp4"></video></div>
             <div class="date">October 22</div>
           </div>
-          <div class="thumb active" data-src="/Frontend/Video's/Kopie van DVC 23102024.MP4" data-name="DVC 23102024">
-            <div class="frame"><video class="thumb-video" muted playsinline preload="metadata" src="/Frontend/Video's/Kopie van DVC 23102024.MP4"></video></div>
+          <div class="thumb active" data-src="Video's/Kopie van DVC 23102024.MP4" data-name="DVC 23102024">
+            <div class="frame"><video class="thumb-video" muted playsinline preload="metadata" src="Video's/Kopie van DVC 23102024.MP4"></video></div>
             <div class="date">October 24</div>
           </div>
-          <div class="thumb" data-src="/Frontend/Video's/Kopie van AP 08-12-2025.MP4.mp4" data-name="AP 08-12-2025">
-            <div class="frame"><video class="thumb-video" muted playsinline preload="metadata" src="/Frontend/Video's/Kopie van AP 08-12-2025.MP4.mp4"></video></div>
+          <div class="thumb" data-src="Video's/Kopie van AP 08-12-2025.MP4.mp4" data-name="AP 08-12-2025">
+            <div class="frame"><video class="thumb-video" muted playsinline preload="metadata" src="Video's/Kopie van AP 08-12-2025.MP4.mp4"></video></div>
             <div class="date">October 28</div>
           </div>
-          <div class="thumb" data-src="/Frontend/Video's/Copy of Kopie van AP 08-12-2025.MP4.mp4" data-name="AP 08-12-2025 (copy)">
-            <div class="frame"><video class="thumb-video" muted playsinline preload="metadata" src="/Frontend/Video's/Copy of Kopie van AP 08-12-2025.MP4.mp4"></video></div>
+          <div class="thumb" data-src="Video's/Copy of Kopie van AP 08-12-2025.MP4.mp4" data-name="AP 08-12-2025 (copy)">
+            <div class="frame"><video class="thumb-video" muted playsinline preload="metadata" src="Video's/Copy of Kopie van AP 08-12-2025.MP4.mp4"></video></div>
             <div class="date">October 29</div>
           </div>
         </div>
@@ -151,59 +152,104 @@
     </div>
 
     <!-- 4D progress chart -->
-    <div class="card">
+    <div class="card card--chart-overlay">
       <div class="card-head">
         <span class="ic"><svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 17l6-6 4 4 8-8"/><path d="M14 7h7v7"/></svg></span>
         <span class="card-title">4D Progress · Planned vs Actual</span>
       </div>
       <div class="chart-wrap">
-        <svg viewBox="0 0 520 270" xmlns="http://www.w3.org/2000/svg">
-          <!-- y grid + labels -->
-          <g font-family="Inter" font-size="10" fill="#93a1b8">
-            <text x="6" y="34">100%</text>
-            <text x="10" y="92">75%</text>
-            <text x="10" y="150">50%</text>
-            <text x="10" y="208">25%</text>
+        <svg viewBox="0 0 560 280" xmlns="http://www.w3.org/2000/svg" preserveAspectRatio="none">
+          <defs>
+            <linearGradient id="gp" x1="0" y1="0" x2="0" y2="1">
+              <stop offset="0%"   stop-color="#00c8ff" stop-opacity="0.18"/>
+              <stop offset="100%" stop-color="#00c8ff" stop-opacity="0.01"/>
+            </linearGradient>
+            <linearGradient id="ga" x1="0" y1="0" x2="0" y2="1">
+              <stop offset="0%"   stop-color="#0066ff" stop-opacity="0.13"/>
+              <stop offset="100%" stop-color="#0066ff" stop-opacity="0.01"/>
+            </linearGradient>
+          </defs>
+
+          <!-- Y labels -->
+          <g font-family="Inter" font-size="11.5" fill="#93a1b8" text-anchor="end">
+            <text x="46" y="56">100%</text>
+            <text x="46" y="100">75%</text>
+            <text x="46" y="144">50%</text>
+            <text x="46" y="188">25%</text>
+            <text x="46" y="232">0%</text>
           </g>
-          <g stroke="#eef1f7" stroke-width="1" stroke-dasharray="3 4">
-            <line x1="46" y1="30"  x2="500" y2="30"/>
-            <line x1="46" y1="88"  x2="500" y2="88"/>
-            <line x1="46" y1="146" x2="500" y2="146"/>
-            <line x1="46" y1="204" x2="500" y2="204"/>
-            <line x1="46" y1="232" x2="500" y2="232"/>
+
+          <!-- Horizontal grid lines -->
+          <g stroke="#e8edf5" stroke-width="1">
+            <line x1="52" y1="52"  x2="542" y2="52"/>
+            <line x1="52" y1="96"  x2="542" y2="96"/>
+            <line x1="52" y1="140" x2="542" y2="140"/>
+            <line x1="52" y1="184" x2="542" y2="184"/>
+            <line x1="52" y1="228" x2="542" y2="228"/>
           </g>
-          <!-- vertical guides -->
-          <g stroke="#f4f6fa" stroke-width="1">
-            <line x1="46"  y1="30" x2="46"  y2="232"/>
-            <line x1="159" y1="30" x2="159" y2="232"/>
-            <line x1="273" y1="30" x2="273" y2="232"/>
-            <line x1="386" y1="30" x2="386" y2="232"/>
-            <line x1="500" y1="30" x2="500" y2="232"/>
+
+          <!-- Vertical guides -->
+          <g stroke="#eef1f7" stroke-width="1">
+            <line x1="52"  y1="52" x2="52"  y2="228"/>
+            <line x1="174" y1="52" x2="174" y2="228"/>
+            <line x1="298" y1="52" x2="298" y2="228"/>
+            <line x1="420" y1="52" x2="420" y2="228"/>
+            <line x1="542" y1="52" x2="542" y2="228"/>
           </g>
+
+          <!-- Area fills -->
+          <polygon fill="url(#gp)" points="52,186 174,163 298,149 420,119 542,57 542,228 52,228"/>
+          <polygon fill="url(#ga)" points="52,191 174,166 298,156 420,129 542,68 542,228 52,228"/>
 
           <!-- PLANNED (dashed cyan) -->
-          <polyline fill="none" stroke="#00c8ff" stroke-width="2.4" stroke-dasharray="6 5" stroke-linecap="round" stroke-linejoin="round"
-            points="46,206 159,176 273,158 386,118 500,38"/>
-          <circle cx="500" cy="38" r="3.4" fill="#00c8ff"/>
-
-          <!-- ACTUAL (solid blue) -->
-          <polyline fill="none" stroke="#0066ff" stroke-width="2.8" stroke-linecap="round" stroke-linejoin="round"
-            points="46,214 159,182 273,168 386,132 500,52"/>
-          <g fill="#0066ff">
-            <circle cx="46"  cy="214" r="3.6"/>
-            <circle cx="159" cy="182" r="3.6"/>
-            <circle cx="273" cy="168" r="3.6"/>
-            <circle cx="386" cy="132" r="3.6"/>
-            <circle cx="500" cy="52"  r="3.6"/>
+          <polyline fill="none" stroke="#00c8ff" stroke-width="2.5" stroke-dasharray="7 4"
+            stroke-linecap="round" stroke-linejoin="round"
+            points="52,186 174,163 298,149 420,119 542,57"/>
+          <g fill="white" stroke="#00c8ff" stroke-width="2.2">
+            <circle cx="52"  cy="186" r="4"/>
+            <circle cx="174" cy="163" r="4"/>
+            <circle cx="298" cy="149" r="4"/>
+            <circle cx="420" cy="119" r="4"/>
+            <circle cx="542" cy="57"  r="4"/>
           </g>
 
-          <!-- x labels -->
-          <g font-family="Inter" font-size="10" fill="#93a1b8" text-anchor="middle">
-            <text x="46"  y="252">Dec '23</text>
-            <text x="159" y="252">Mar '24</text>
-            <text x="273" y="252">Jun '24</text>
-            <text x="386" y="252">Sep '24</text>
-            <text x="500" y="252">Oct '24</text>
+          <!-- ACTUAL (solid blue) -->
+          <polyline fill="none" stroke="#0066ff" stroke-width="2.8"
+            stroke-linecap="round" stroke-linejoin="round"
+            points="52,191 174,166 298,156 420,129 542,68"/>
+          <g fill="#0066ff">
+            <circle cx="52"  cy="191" r="4.5"/>
+            <circle cx="174" cy="166" r="4.5"/>
+            <circle cx="298" cy="156" r="4.5"/>
+            <circle cx="420" cy="129" r="4.5"/>
+            <circle cx="542" cy="68"  r="4.5"/>
+          </g>
+          <g fill="white">
+            <circle cx="52"  cy="191" r="2"/>
+            <circle cx="174" cy="166" r="2"/>
+            <circle cx="298" cy="156" r="2"/>
+            <circle cx="420" cy="129" r="2"/>
+            <circle cx="542" cy="68"  r="2"/>
+          </g>
+
+          <!-- X labels -->
+          <g font-family="Inter" font-size="11.5" fill="#93a1b8" text-anchor="middle">
+            <text x="52"  y="248">Dec '23</text>
+            <text x="174" y="248">Mar '24</text>
+            <text x="298" y="248">Jun '24</text>
+            <text x="420" y="248">Sep '24</text>
+            <text x="542" y="248">Oct '24</text>
+          </g>
+
+          <!-- Legend -->
+          <g font-family="Inter" font-size="11" fill="#5a6b85">
+            <line x1="340" y1="268" x2="360" y2="268" stroke="#00c8ff" stroke-width="2.2" stroke-dasharray="6 3"/>
+            <circle cx="350" cy="268" r="3.5" fill="white" stroke="#00c8ff" stroke-width="2"/>
+            <text x="366" y="272">Planned</text>
+            <line x1="432" y1="268" x2="452" y2="268" stroke="#0066ff" stroke-width="2.5"/>
+            <circle cx="442" cy="268" r="3.8" fill="#0066ff"/>
+            <circle cx="442" cy="268" r="1.6" fill="white"/>
+            <text x="458" y="272">Actual</text>
           </g>
         </svg>
       </div>
@@ -216,23 +262,7 @@
         <span class="card-title">Construction Inspector</span>
       </div>
       <div class="insp-label">By Category</div>
-
-      <div class="cat">
-        <div class="cat-row"><span class="cat-name">Foundation</span><span class="cat-meta">2/2 · 100%</span></div>
-        <div class="bar"><i style="width:100%"></i></div>
-      </div>
-      <div class="cat">
-        <div class="cat-row"><span class="cat-name">Columns</span><span class="cat-meta">3/4 · 75%</span></div>
-        <div class="bar"><i style="width:75%"></i></div>
-      </div>
-      <div class="cat">
-        <div class="cat-row"><span class="cat-name">Beams</span><span class="cat-meta">8/10 · 80%</span></div>
-        <div class="bar"><i style="width:80%"></i></div>
-      </div>
-      <div class="cat">
-        <div class="cat-row"><span class="cat-name">Deck</span><span class="cat-meta">2/4 · 50%</span></div>
-        <div class="bar"><i style="width:50%"></i></div>
-      </div>
+      <div id="inspector-categories"></div>
     </div>
   </section>
 
