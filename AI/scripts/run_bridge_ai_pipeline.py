@@ -232,8 +232,25 @@ def _stage_vision(args, masked_dir: Path, frames_dir: Path, vision_dir: Path, ma
                 "--model-render", str(model_render),
                 "--output", str(out / "comparison_figure.jpg"),
             ])
+    # Whole-flyover construction overlay video next to the finished model.
+    overlay_video = vision_dir / "construction_overlay.mp4"
+    overlay_status = "skipped"
+    try:
+        cmd = [PYTHON, str(SCRIPT_DIR / "construction_overlay_video.py"), "--frames", str(source_dir), "--output", str(overlay_video), "--fps", "8"]
+        if model_render:
+            cmd += ["--model-render", str(model_render)]
+        _run(cmd)
+        overlay_status = "ok"
+    except subprocess.CalledProcessError:
+        overlay_status = "failed"
+
     results.sort(key=lambda r: r["bridge_pct"], reverse=True)
-    manifest["vision"] = {"status": "ok", "frames_checked": len(results), "best": results[:3]}
+    manifest["vision"] = {
+        "status": "ok",
+        "frames_checked": len(results),
+        "best": results[:3],
+        "overlay_video": str(overlay_video) if overlay_status == "ok" else None,
+    }
 
 
 def _write_report(run_dir: Path, manifest: dict) -> None:
@@ -278,11 +295,13 @@ def _write_report(run_dir: Path, manifest: dict) -> None:
 
     vision = manifest.get("vision")
     if vision and vision.get("status") == "ok":
-        lines += ["", "## Vision check (bridge isolated from background)", ""]
+        lines += ["", "## Vision check (active construction isolated)", ""]
+        if vision.get("overlay_video"):
+            lines.append(f"- **Whole-flyover construction overlay video**: `{vision['overlay_video']}`")
         for item in vision.get("best", []):
             fig = Path(item["dir"]) / "comparison_figure.jpg"
             tag = f" - figure: `{fig}`" if fig.exists() else ""
-            lines.append(f"- `{item['frame']}`: bridge covers {item['bridge_pct']}% of frame{tag}")
+            lines.append(f"- `{item['frame']}`: construction covers {item['bridge_pct']}% of frame{tag}")
 
     lines += [
         "",

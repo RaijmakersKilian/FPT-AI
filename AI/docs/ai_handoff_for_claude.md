@@ -19,9 +19,14 @@ TRACK A - 3D point cloud (DONE, proven):
   optional anchor/control-point alignment to stabilize orientation.
 
 TRACK B - vision-only (teacher's 2026-06-15 recommendation, DONE as demo):
-  one drone frame -> SAM3 isolates the bridge + removes background ->
-  side-by-side vs a background-free render of the final model.
-  Becomes automatic 1:1 once Unity provides the drone pose.
+  FOCUS = the active CONSTRUCTION between the finished roads (yellow
+  falsework/gantry, new pier, cranes), NOT the whole bridge. SAM3 isolates
+  the construction zone per frame and removes the rest; run across the whole
+  flyover into construction_overlay.mp4, shown next to the finished 3D model.
+  A pixel-level 1:1 overlay onto the model needs the drone pose (Unity); until
+  then the quantitative progress number comes from Track A. Prompt choice
+  matters: broad terms over-fire onto the whole deck, use "yellow steel
+  gantry"/"scaffolding"/"bridge pylon tower"/"construction crane".
 
 PRODUCT - one command runs the whole AI part:
   AI/scripts/run_bridge_ai_pipeline.py  (see AI/docs/pipeline_usage.md)
@@ -48,7 +53,8 @@ AI/scripts/remove_black_points.py      - drop blacked-out hallucinated points
 AI/scripts/clean_pointcloud.py         - SOR + density smear/noise removal
 AI/scripts/pick_control_points.py      - Open3D landmark/anchor picker (PLY-friendly)
 AI/scripts/check_mirror_fit.py         - shows the two lengthwise mirror fits
-AI/scripts/segment_bridge_frame.py     - Track B: isolate bridge + remove background
+AI/scripts/segment_bridge_frame.py     - Track B: isolate the construction zone (--focus)
+AI/scripts/construction_overlay_video.py - Track B: whole-video construction overlay MP4
 AI/scripts/render_bridge_model.py      - software (no-GL) render of the GLB model
 AI/scripts/build_vision_comparison.py  - Track B 4-panel presentation figure
 ```

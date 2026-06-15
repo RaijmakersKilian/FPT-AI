@@ -83,6 +83,40 @@ depth sort, and splats colored disks on black. Viewpoint is controllable
 (twin carriageways), so the render shows two parallel deck ribbons - matching
 the twin decks visible in the drone frames.
 
+### 2b. Whole-video construction overlay
+
+`construction_overlay_video.py` runs the same construction segmentation across
+every sampled frame of the flyover and writes an annotated MP4:
+
+```text
+[ drone frame + highlighted construction ]  [ finished 3D model render ]
+[ construction-coverage timeline along the whole flyover ]
+```
+
+Output: `AI/outputs/vision_compare/construction_overlay.mp4`. This is the
+"for the whole video" deliverable and the main vision artifact for the
+presentation.
+
+### How the 2D vision relates to the 3D model (be honest)
+
+```text
+A pixel-level 1:1 overlay of each frame onto the 3D model needs the drone
+camera pose. We do not have it yet (it comes from Giada's Unity flight path).
+So the comparison has two honest halves:
+
+  VISUAL (this track):       the construction is isolated per frame and shown
+                             next to the finished 3D model render, across the
+                             whole flyover video.
+  QUANTITATIVE (3D track):   the per-section "built %" comes from comparing the
+                             MASt3R-SLAM point cloud to the final model
+                             (AI/src/ftp_ai/model_comparison.py). That is the
+                             number to quote for progress.
+
+Once Unity provides the pose, the 2D construction mask can be projected onto
+the model and the comparison becomes automatic and 1:1 - the vision track then
+also produces a quantitative per-span progress number.
+```
+
 ### 3. Presentation figure
 
 `build_vision_comparison.py` stitches the four steps into one panel:
