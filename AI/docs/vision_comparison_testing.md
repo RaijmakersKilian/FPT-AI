@@ -39,23 +39,39 @@ AI/scripts/render_bridge_model.py    - software render of the GLB model, no back
 AI/scripts/build_vision_comparison.py - composes the 4-panel presentation figure
 ```
 
-### 1. Frame segmentation + background removal
+### 1. Construction-zone segmentation + isolation
 
-`segment_bridge_frame.py` runs SAM3 text prompts for bridge structures
-(elevated bridge deck, concrete bridge road, bridge pylon tower, bridge
-concrete pier, construction formwork, construction crane), colors each class,
-and produces:
+IMPORTANT (2026-06-15 correction): the target is NOT the whole bridge - the
+two roadways are already finished. Progress tracking must focus on the ACTIVE
+CONSTRUCTION happening between/alongside the finished roads: the yellow
+falsework/gantry, the new pier being built, the pylon, and cranes. This
+matches the teacher's brief ("search for what is currently being built, ignore
+the rest").
+
+`segment_bridge_frame.py --focus construction` (default) runs SAM3 with
+prompts that localize the construction apparatus and produces:
 
 ```text
-structures_overlay.jpg        - classes colored on the frame (deck/pylon/formwork/equipment)
-bridge_only.jpg               - background blacked out, bridge isolated
+structures_overlay.jpg        - construction classes colored (finished road dimmed grey)
+bridge_only.jpg               - everything except the construction zone removed
 bridge_only_transparent.png   - same with a real alpha channel
-bridge_mask.png               - binary bridge mask
-segmentation_summary.json     - per-class pixel coverage
+bridge_mask.png               - binary construction-zone mask
+segmentation_summary.json     - per-class pixel coverage + construction_pixel_pct
 ```
 
-Equipment (cranes) is segmented but excluded from the bridge mask by default,
-since it is not part of the structure.
+Prompt selection mattered. A SAM3 prompt probe on frame 120 showed broad terms
+over-fire onto the whole deck, so they were dropped:
+
+```text
+over-fires onto whole bridge:  "bridge construction formwork",
+                               "unfinished bridge segment", "bridge construction site"
+localizes the construction:    "yellow steel gantry" (0.62), "scaffolding" (0.56),
+                               "bridge pylon tower", "construction crane"
+```
+
+`--focus full-bridge` keeps the old whole-bridge prompts if ever needed.
+Equipment (cranes) is segmented but excluded from the isolated zone by default
+(`--include-equipment` to keep it).
 
 ### 2. Model render (no background)
 
@@ -84,14 +100,17 @@ model_render.jpg                    oblique model render
 model_render_topdown.jpg            near top-down model render
 ```
 
-Per-frame bridge coverage and behavior:
+Per-frame construction-zone coverage (focus=construction, min-score 0.4):
 
 ```text
-frame 90:  15 segments, 10.25% bridge, all 4 classes - clean separation incl. cranes
-frame 120:  8 segments, 12.95% bridge, deck+pylon+formwork - strong isolation
-frame 60:   3 segments,  0.0% bridge - prompts did not fire (flat receding view)
-frame 150:  3 segments,  0.15% bridge - prompts did not fire
+frame 120: construction zone = 2.78% of frame - yellow falsework/gantry + pier isolated,
+           both finished roads correctly left out
+frame 90:  construction zone = 2.86% of frame - falsework segments + cranes, roads left out
 ```
+
+The tight 2-3% figures are the point: the segmentation now isolates only the
+active construction between the roads, not the whole bridge (which earlier read
+10-13%). Whole-bridge `--focus full-bridge` still works for context.
 
 ## Honest Findings (for the presentation)
 

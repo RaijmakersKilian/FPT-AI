@@ -34,9 +34,9 @@ def main() -> None:
 
     panels = [
         (args.frame, "1. Drone frame (input)", "real world + background"),
-        (args.overlay, "2. SAM3 segmentation", "bridge structures detected"),
-        (args.bridge_only, "3. Background removed", "as-built bridge isolated"),
-        (args.model_render, "4. Planned 3D model", "reference, no background"),
+        (args.overlay, "2. SAM3 construction segmentation", "active construction detected"),
+        (args.bridge_only, "3. Construction isolated", "finished roads + background removed"),
+        (args.model_render, "4. Planned span (3D model)", "reference, no background"),
     ]
 
     rendered = [_panel(path, title, subtitle, args.panel_width) for path, title, subtitle in panels]
@@ -47,13 +47,13 @@ def main() -> None:
     canvas[:strip.shape[0]] = strip
     cv2.putText(
         canvas,
-        "Vision-only progress check: SAM isolates the as-built bridge from one frame and removes background; compared against the planned model.",
+        "Vision-only progress check: SAM isolates the ACTIVE CONSTRUCTION between the finished roads (not the bridge itself) and removes the rest.",
         (20, strip.shape[0] + 28),
         cv2.FONT_HERSHEY_SIMPLEX, 0.55, (235, 235, 235), 1, cv2.LINE_AA,
     )
     cv2.putText(
         canvas,
-        "With Unity drone-pose mapping this comparison becomes automatic and 1:1 (same viewpoint, both background-free).",
+        "With Unity drone-pose mapping this compares the built construction against the planned span automatically and 1:1.",
         (20, strip.shape[0] + 52),
         cv2.FONT_HERSHEY_SIMPLEX, 0.55, (170, 200, 255), 1, cv2.LINE_AA,
     )
