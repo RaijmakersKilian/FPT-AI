@@ -1043,6 +1043,9 @@ AI/docs/nerfstudio_splatfacto_testing.md
 AI/docs/manual_frame_reconstruction_testing.md
 AI/docs/method_comparison_table.md
 AI/docs/dynamic_masking_experiment.md
+AI/docs/slam_drift_finding.md          - why reconstructions curve (failed loop
+                                         closure on reversed return pass) + the
+                                         flight rule + single-pass proof
 ```
 
 Then inspect:
