@@ -36,10 +36,20 @@ from ftp_ai.segmentation import Sam3TextPromptSegmenter  # noqa: E402
 # "bridge construction formwork" over-fire onto the finished deck, while these
 # localize the central construction apparatus.
 CONSTRUCTION_PROMPTS: list[tuple[SegmentLabel, str]] = [
+    # Structures / machines being built (clean, low false-positive set)
     (SegmentLabel.FORMWORK, "yellow steel gantry"),
     (SegmentLabel.FORMWORK, "scaffolding"),
     (SegmentLabel.SUPPORT_COLUMN, "bridge pylon tower"),
     (SegmentLabel.EQUIPMENT, "construction crane"),
+]
+
+# Optional construction-ground zone (--include-ground): staging, materials,
+# earthworks/sand. Captures more of the real construction area but also
+# over-fires onto shipping containers/trucks, so it is off by default.
+GROUND_PROMPTS: list[tuple[SegmentLabel, str]] = [
+    (SegmentLabel.EXPOSED_REBAR, "construction laydown area"),
+    (SegmentLabel.EXPOSED_REBAR, "construction materials"),
+    (SegmentLabel.EXPOSED_REBAR, "bare soil construction ground"),
 ]
 
 # Full-bridge prompts (the old behavior), kept for --focus full-bridge.
@@ -64,7 +74,7 @@ LABEL_NAMES: dict[SegmentLabel, str] = {
     SegmentLabel.COMPLETED_DECK: "finished road",
     SegmentLabel.FORMWORK: "formwork/new span",
     SegmentLabel.SUPPORT_COLUMN: "new pier/pylon",
-    SegmentLabel.EXPOSED_REBAR: "rebar",
+    SegmentLabel.EXPOSED_REBAR: "construction area/materials",
     SegmentLabel.EQUIPMENT: "equipment",
 }
 
@@ -78,6 +88,7 @@ def main() -> None:
     parser.add_argument("--output", type=Path, required=True, help="Output directory")
     parser.add_argument("--focus", choices=["construction", "full-bridge"], default="construction")
     parser.add_argument("--min-score", type=float, default=0.3)
+    parser.add_argument("--include-ground", action="store_true", help="Also detect the construction ground zone (staging/materials/sand); noisier")
     parser.add_argument("--include-equipment", action="store_true", help="Keep cranes/equipment in the isolated construction image")
     args = parser.parse_args()
 
@@ -87,11 +98,14 @@ def main() -> None:
         raise SystemExit(f"could not read {args.image}")
     height, width = frame.shape[:2]
 
-    prompts = CONSTRUCTION_PROMPTS if args.focus == "construction" else FULL_BRIDGE_PROMPTS
     if args.focus == "construction":
+        prompts = list(CONSTRUCTION_PROMPTS)
+        if args.include_ground:
+            prompts += GROUND_PROMPTS
         foreground_labels = set(CONSTRUCTION_LABELS)
         title = "SAM3 construction-zone segmentation"
     else:
+        prompts = FULL_BRIDGE_PROMPTS
         foreground_labels = {SegmentLabel.COMPLETED_DECK, SegmentLabel.SUPPORT_COLUMN, SegmentLabel.FORMWORK}
         title = "SAM3 bridge segmentation"
     if args.include_equipment:
