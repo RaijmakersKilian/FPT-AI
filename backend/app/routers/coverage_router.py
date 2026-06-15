@@ -1,6 +1,6 @@
 from pathlib import Path
 
-from fastapi import APIRouter, HTTPException
+from fastapi import APIRouter, HTTPException, Response
 from fastapi.responses import FileResponse, JSONResponse
 
 router = APIRouter()
@@ -22,7 +22,7 @@ def _find(filename: str) -> Path:
 @router.get("/data")
 def coverage_data():
     """Coverage JSON (per-type of per-segment)."""
-    # coverage_results.json = per-type with proper category names (preferred),
+    # coverage_results.json = per-type met Vietnamese namen (preferred)
     # coverage_data.json = per-segment fallback
     for name in ("coverage_results.json", "coverage_data.json"):
         p = _FRONTEND / name
@@ -45,5 +45,6 @@ def coverage_pointcloud():
                     path=str(p),
                     media_type="application/octet-stream",
                     filename=name,
+                    headers={"Cache-Control": "no-store"},
                 )
     raise HTTPException(status_code=404, detail="Geen coverage PLY gevonden")

@@ -183,9 +183,27 @@ def export_coverage_ply(ifc, segment_labels, results, path):
     colors = np.zeros((len(segment_labels), 3))
     for seg, _, _, pct in results:
         colors[segment_labels == seg] = seg_color(pct)
-    ifc_cov = o3d.geometry.PointCloud(ifc)
-    ifc_cov.colors = o3d.utility.Vector3dVector(colors)
-    o3d.io.write_point_cloud(path, ifc_cov)
+
+    pts = np.asarray(ifc.points).astype(np.float32)
+    rgb = (colors * 255).clip(0, 255).astype(np.uint8)
+    n = len(pts)
+
+    header = (
+        "ply\nformat binary_little_endian 1.0\ncomment Created by FTP-AI\n"
+        f"element vertex {n}\n"
+        "property float x\nproperty float y\nproperty float z\n"
+        "property uchar red\nproperty uchar green\nproperty uchar blue\n"
+        "end_header\n"
+    )
+    dt = np.dtype([('x', '<f4'), ('y', '<f4'), ('z', '<f4'),
+                   ('r', 'u1'), ('g', 'u1'), ('b', 'u1')])
+    arr = np.empty(n, dtype=dt)
+    arr['x'], arr['y'], arr['z'] = pts[:, 0], pts[:, 1], pts[:, 2]
+    arr['r'], arr['g'], arr['b'] = rgb[:, 0], rgb[:, 1], rgb[:, 2]
+
+    with open(path, 'wb') as f:
+        f.write(header.encode('ascii'))
+        f.write(arr.tobytes())
     print(f"  Coverage PLY opgeslagen: {path}")
 
 
