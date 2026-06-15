@@ -24,6 +24,8 @@ This document delivers two things:
 | Nerfstudio / Splatfacto Gaussian Splatting | COLMAP poses + frames | Gaussian splat PLY (7,927 gaussians) | Pipeline only | Only 8 registered poses, bad visual quality, MeshLab cannot render splats | Proof of pipeline; needs planned capture to be useful |
 | Current-vs-final 3D comparison (v1) | Current cloud + final GLB | Distance metrics + colored cloud | Yes, in principle | PCA-only alignment, only current-to-model direction, one global number | Superseded by v2 below |
 | Current-vs-final 3D comparison (v2, this doc) | Current cloud + final model/cloud | ICP-refined alignment, two-direction distances, per-section progress | Yes | Still normalized scale, unsupervised alignment can settle wrong | Main research direction; add control points for production |
+| Control-point / anchor alignment | Current cloud + 1 picked anchor per cloud | Mirror-resolved, stable per-section comparison | Yes | Needs one human click per scan | Use to stabilize the 3D comparison; trivial with GPS/Unity pose |
+| Vision-only comparison (SAM3 + model render) | One drone frame + GLB model | Bridge isolated, background removed, side-by-side vs model | Yes on good frames | Viewpoint-dependent, mask holes, no pose yet so not pixel-overlap scored | Teacher-recommended 2D track; becomes automatic 1:1 with Unity drone pose |
 
 ## What Changed In The Comparison (v2)
 
