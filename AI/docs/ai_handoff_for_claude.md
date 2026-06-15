@@ -7,6 +7,81 @@ Current branch: `ai-vslam-gaussian-splat-test`
 Purpose of this document: give another coding assistant enough context to
 continue the AI research work without needing the full chat history.
 
+## CURRENT STATUS (updated 2026-06-15) - READ THIS FIRST
+
+Final week. Presentation is Friday 2026-06-19. Two AI tracks are built and
+there is now a single one-command pipeline tying them together.
+
+```text
+TRACK A - 3D point cloud (DONE, proven):
+  video -> SAM3 traffic masking -> MASt3R-SLAM -> black-point filter ->
+  geometric clean -> compare to final model (per-section progress) ->
+  optional anchor/control-point alignment to stabilize orientation.
+
+TRACK B - vision-only (teacher's 2026-06-15 recommendation, DONE as demo):
+  one drone frame -> SAM3 isolates the bridge + removes background ->
+  side-by-side vs a background-free render of the final model.
+  Becomes automatic 1:1 once Unity provides the drone pose.
+
+PRODUCT - one command runs the whole AI part:
+  AI/scripts/run_bridge_ai_pipeline.py  (see AI/docs/pipeline_usage.md)
+  video in -> AI/outputs/runs/<name>/REPORT.md out.
+```
+
+Key newest docs (read in this order):
+
+```text
+AI/docs/meetingwithteacher.md          - teacher meeting transcript (the brief)
+AI/docs/vision_comparison_testing.md   - Track B method + presentation talking points
+AI/docs/pipeline_usage.md              - the one-command product usage
+AI/docs/dynamic_masking_experiment.md  - Track A masking/cleaning/denser-frames chain
+AI/docs/method_comparison_table.md     - full method table + 3D comparison results
+AI/docs/bridge_isolation_testing.md    - PARKED (3D bridge crop; not clean enough)
+```
+
+Newest scripts (all run with the Windows env AI/.venv-sam3):
+
+```text
+AI/scripts/run_bridge_ai_pipeline.py   - the product orchestrator (one command)
+AI/scripts/mask_dynamic_objects.py     - SAM3 traffic masking on extracted frames
+AI/scripts/remove_black_points.py      - drop blacked-out hallucinated points
+AI/scripts/clean_pointcloud.py         - SOR + density smear/noise removal
+AI/scripts/pick_control_points.py      - Open3D landmark/anchor picker (PLY-friendly)
+AI/scripts/check_mirror_fit.py         - shows the two lengthwise mirror fits
+AI/scripts/segment_bridge_frame.py     - Track B: isolate bridge + remove background
+AI/scripts/render_bridge_model.py      - software (no-GL) render of the GLB model
+AI/scripts/build_vision_comparison.py  - Track B 4-panel presentation figure
+```
+
+Environments: Windows AI/.venv-sam3 has SAM3 + trimesh + scipy + open3d +
+opencv (use this for everything except SLAM). MASt3R-SLAM runs in WSL
+Ubuntu-24.04 at /opt/mast3r-slam-env. Trello creds are in the user env
+(TRELLO_API_KEY / TRELLO_TOKEN); board FPT-AI id 6a0ad1b50725565ed877de90.
+
+Best current artifacts:
+
+```text
+AI/outputs/mast3r_slam_bridge1_masked_s15/pointcloud_clean.ply   (best cloud, 3.2M pts)
+AI/outputs/vision_compare/frame_00120/comparison_figure.jpg      (Track B figure)
+AI/outputs/vision_compare/frame_00090/comparison_figure.jpg      (Track B figure)
+```
+
+What is left / good next tasks for Codex (not started):
+
+```text
+1. Run the full pipeline once end-to-end on BridgeVid1 and (separately)
+   Bridgevid2 to produce two clean REPORT.md runs for the presentation.
+2. Repeatability angle: compare the two videos' per-section numbers (the
+   teacher wants "multi-pass works with the same model" framed clearly).
+3. The future drone flight-plan doc (Task 4 below) - high-value, pure writing.
+4. Optional: a project-specific trained segmentation model would make Track B
+   automatic (open-vocabulary SAM is viewpoint-dependent; see vision doc).
+```
+
+DO NOT reopen the 3D bridge-isolation crop (AI/docs/bridge_isolation_testing.md);
+it was parked on purpose - unsupervised alignment is not precise enough, and it
+becomes trivial only with calibrated (GPS/Unity) alignment.
+
 ## Project Explained Clearly
 
 This project is about construction progress tracking for a bridge.
