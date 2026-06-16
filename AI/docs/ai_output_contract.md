@@ -102,9 +102,22 @@ For a "progress over time" view, read `compare.model_built_pct` and
 ## Important honesty notes (so the frontend doesn't over-promise)
 
 ```text
-- All videos we currently have are one date (27/12/2023). "Progress over time"
-  needs more dated videos from the client; the pipeline already supports it
-  (one run per date), the data is the only blocker.
+- We now have multiple dated flights (Nov 2023 -> Oct 2024). "Progress over
+  time" is built from compare.model_built_pct per date (see progress_over_time).
+  Caveat: these flights are all of a largely-complete bridge, so built % mostly
+  reflects how much each flight RECONSTRUCTED (coverage), not month-to-month
+  construction. Present it as per-section coverage, not survey-grade progress.
+- The dated runs were re-run with SAM3 traffic masking (2026-06-16): they have
+  03_clean + 04_comparison + manifest, but NO 05_vision/construction_overlay.mp4.
+  Only bridgevid1_full has the construction-overlay video, so artifact #4 below
+  is available for that run only until the dated videos get the vision stage too.
+- The 04/03 == 20/03 duplicate was dropped. Distinct curve points: 9 dates +
+  BridgeVid1 (Bridgevid2 shares BridgeVid1's date).
+- READY-TO-HAND-OVER: AI/outputs/handoff_plys/ already has, per date, a
+  browser-ready decimated as-built cloud (<date>_asbuilt_web.ply, ~400k pts) and
+  coverage cloud (<date>_coverage_web.ply), plus _comparison.json, _manifest.json,
+  the progress curve and a README. Upload that folder. Full-res clouds remain in
+  AI/outputs/runs/<date>/ (paths listed in the handoff README).
 - Built % is a scale-normalized estimate, not survey-grade. It is calibrated
   once a control-point anchor or GPS/Unity drone pose is provided.
 - The construction-detection video flags the active construction zone; it is
