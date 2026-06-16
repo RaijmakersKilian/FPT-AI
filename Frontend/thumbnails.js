@@ -70,7 +70,11 @@ exportOptions.forEach((option) => {
     event.stopPropagation();
     const format = option.dataset.format || 'unknown';
     closeExportMenu();
-    alert(`Export as ${format.toUpperCase()} will be connected to the database later.`);
+    if (format === 'pdf' && typeof window.exportDashboardPdf === 'function') {
+      window.exportDashboardPdf();
+    } else {
+      alert(`Export as ${format.toUpperCase()} is not available yet.`);
+    }
   });
 });
 

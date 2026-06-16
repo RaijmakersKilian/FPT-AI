@@ -8,6 +8,14 @@
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="Dashboard.css">
+<!-- Supabase Storage: load videos from the "videos" bucket -->
+<script defer src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script defer src="supabase-config.js"></script>
+<script defer src="supabase-data.js"></script>
+<!-- PDF export (client-side) -->
+<script defer src="https://cdn.jsdelivr.net/npm/html2canvas@1.4.1/dist/html2canvas.min.js"></script>
+<script defer src="https://cdn.jsdelivr.net/npm/jspdf@2.5.1/dist/jspdf.umd.min.js"></script>
+<script defer src="export.js"></script>
 <script type="importmap">
 {
   "imports": {
@@ -68,9 +76,9 @@
           <span class="card-title" id="main-video-title">Video: DVC5543210</span>
         </div>
         <div class="video-frame">
-          <!-- Stylised aerial cityscape -->
-            <video id="main-video" controls muted src="Video's/Kopie van DJI_0072.MP4.mp4"></video>
-          
+          <!-- src is set by supabase-data.js from the Supabase "videos" bucket -->
+            <video id="main-video" controls muted></video>
+
         </div>
       </div>
 
@@ -79,27 +87,9 @@
           <span class="ic"><svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="m22 8-6 4 6 4V8Z"/><rect x="2" y="6" width="14" height="12" rx="2"/></svg></span>
           <span class="card-title">Video timeline archive</span>
         </div>
+        <!-- Thumbnails are populated by supabase-data.js from the Supabase "videos" bucket -->
         <div class="thumbs" id="thumbs">
-          <div class="thumb" data-src="Video's/Kopie van DJI_0072.MP4.mp4" data-name="DJI_0072">
-            <div class="frame"><video class="thumb-video" muted playsinline preload="metadata" src="Video's/Kopie van DJI_0072.MP4.mp4"></video></div>
-            <div class="date">October 21</div>
-          </div>
-          <div class="thumb" data-src="Video's/Kopie van DJI_0072.MP4.mp4" data-name="DJI_0072">
-            <div class="frame"><video class="thumb-video" muted playsinline preload="metadata" src="Video's/Kopie van DJI_0072.MP4.mp4"></video></div>
-            <div class="date">October 22</div>
-          </div>
-          <div class="thumb active" data-src="Video's/Kopie van DVC 23102024.MP4" data-name="DVC 23102024">
-            <div class="frame"><video class="thumb-video" muted playsinline preload="metadata" src="Video's/Kopie van DVC 23102024.MP4"></video></div>
-            <div class="date">October 24</div>
-          </div>
-          <div class="thumb" data-src="Video's/Kopie van AP 08-12-2025.MP4.mp4" data-name="AP 08-12-2025">
-            <div class="frame"><video class="thumb-video" muted playsinline preload="metadata" src="Video's/Kopie van AP 08-12-2025.MP4.mp4"></video></div>
-            <div class="date">October 28</div>
-          </div>
-          <div class="thumb" data-src="Video's/Copy of Kopie van AP 08-12-2025.MP4.mp4" data-name="AP 08-12-2025 (copy)">
-            <div class="frame"><video class="thumb-video" muted playsinline preload="metadata" src="Video's/Copy of Kopie van AP 08-12-2025.MP4.mp4"></video></div>
-            <div class="date">October 29</div>
-          </div>
+          <div class="thumb-empty" style="padding:16px;color:#93a1b8;font-size:13px">Loading videos…</div>
         </div>
         <div class="dots">
           <i></i><i></i><i class="on"></i><i></i><i></i>
