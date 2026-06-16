@@ -75,7 +75,7 @@
           <span class="card-title" id="main-video-title">Video: DVC5543210</span>
         </div>
         <div class="video-frame">
-          <!-- src is set by supabase-data.js from the Supabase "videos" bucket -->
+          <!-- src is set by azure-data.js from the Azure "videos" container -->
             <video id="main-video" controls muted></video>
 
         </div>
@@ -86,13 +86,19 @@
           <span class="ic"><svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="m22 8-6 4 6 4V8Z"/><rect x="2" y="6" width="14" height="12" rx="2"/></svg></span>
           <span class="card-title">Video timeline archive</span>
         </div>
-        <!-- Thumbnails are populated by supabase-data.js from the Supabase "videos" bucket -->
-        <div class="thumbs" id="thumbs">
-          <div class="thumb-empty" style="padding:16px;color:#93a1b8;font-size:13px">Loading videos…</div>
+        <!-- Thumbnails populated by azure-data.js from the Azure "videos" container -->
+        <div class="thumbs-carousel">
+          <button class="thumb-arrow thumb-arrow--left" id="thumb-prev" type="button" aria-label="Previous videos">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M15 18l-6-6 6-6"/></svg>
+          </button>
+          <div class="thumbs" id="thumbs">
+            <div class="thumb-empty" style="padding:16px;color:#93a1b8;font-size:13px">Loading videos…</div>
+          </div>
+          <button class="thumb-arrow thumb-arrow--right" id="thumb-next" type="button" aria-label="More videos">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M9 18l6-6-6-6"/></svg>
+          </button>
         </div>
-        <div class="dots">
-          <i></i><i></i><i class="on"></i><i></i><i></i>
-        </div>
+        <div class="dots" id="thumb-dots"></div>
       </div>
     </div>
 
