@@ -1,5 +1,32 @@
 # FTP-AI — Installation Guide
 
+## Quick Start (Docker)
+
+The fastest way to run the application. Requires Docker Desktop and an existing PostgreSQL database.
+
+```powershell
+git clone https://github.com/RaijmakersKilian/FTP-AI.git
+cd FTP-AI
+Copy-Item .env.example .env
+notepad .env    # fill in your DATABASE_URL
+docker compose up --build
+```
+
+Open **[http://localhost:8000](http://localhost:8000)** — done.
+
+> Docker connects to your existing PostgreSQL database. Use `host.docker.internal` instead of `localhost` in the `DATABASE_URL` so Docker can reach your local PostgreSQL:
+> ```
+> DATABASE_URL=postgresql+psycopg://ftpai_user:password@host.docker.internal:5432/ftpai_db
+> ```
+
+---
+
+## Manual Installation (without Docker)
+
+Use this if you cannot install Docker, or want to run the components separately.
+
+---
+
 ## Table of Contents
 
 1. [System Requirements](#1-system-requirements)

@@ -1,9 +1,9 @@
-async function populateInspector() {
+async function populateInspector(url = '/api/coverage/data') {
   let categories = [];
   let summary    = null;
 
   try {
-    const r = await fetch('/api/coverage/data');
+    const r = await fetch(url);
     if (!r.ok) throw new Error(r.status);
     const data = await r.json();
     summary = data.summary || null;
@@ -36,9 +36,9 @@ async function populateInspector() {
       const n = data.segments.length;
       categories = data.segments.map(s => {
         let label;
-        if (s.seg === 0)          label = 'Start Abutment';
-        else if (s.seg === n - 1) label = 'End Abutment';
-        else                      label = `Span ${s.seg}`;
+        if (s.seg === 0)          label = 'Mố A1';
+        else if (s.seg === n - 1) label = 'Mố A2';
+        else                      label = `Nhịp ${s.seg}`;
         return {
           name: label,
           meta: `${Math.round(s.from_m)}–${Math.round(s.to_m)} m · ${s.coverage_pct}%`,
@@ -84,7 +84,7 @@ function _parseGroup(group) {
   if (!group) return { key: null, name: null };
   if (group === ':') return { key: null, name: null };
 
-  // "Vietnamese naam  [English key]" → English naam tonen, groeperen op English
+  // "Vietnamese naam  [English key]" → English naam tonen, groeperen op English key
   const bracketM = group.match(/^(.+?)\s+\[(.+?)\]$/);
   if (bracketM) {
     return { key: bracketM[2].trim(), name: bracketM[2].trim() };
@@ -102,5 +102,7 @@ function _parseGroup(group) {
 
   return { key: group, name: group };
 }
+
+window.loadCoverageData = (dateKey) => populateInspector(`/api/coverage/data/${dateKey}`);
 
 document.addEventListener('DOMContentLoaded', populateInspector);

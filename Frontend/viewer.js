@@ -21,9 +21,12 @@ async function initViewer() {
   const camera = new THREE.PerspectiveCamera(60, w / h, 0.01, 10000);
   camera.position.set(0, 50, 200);
 
-  const renderer = new THREE.WebGLRenderer({ canvas, antialias: true });
+  const renderer = new THREE.WebGLRenderer({ canvas, antialias: true, preserveDrawingBuffer: true });
   renderer.setSize(w, h);
   renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+
+  // Expose snapshot for PDF export
+  window.getBimSnapshot = () => canvas.toDataURL('image/png');
 
   scene.add(new THREE.AmbientLight(0xffffff, 0.6));
   const sun = new THREE.DirectionalLight(0xffffff, 1.4);
@@ -43,6 +46,40 @@ async function initViewer() {
   let currentModel    = null;
   let showModel       = false;   // GLB hidden by default; coverage PLY is primary view
   // ── Coverage PLY ─────────────────────────────────────────────────────────────
+
+  async function loadCoveragePLY(url) {
+    if (coveragePoints) {
+      scene.remove(coveragePoints);
+      coveragePoints.geometry.dispose();
+      coveragePoints = null;
+    }
+    hidePlaceholder();
+    setLoading(true);
+    try {
+      const geometry = await new Promise((resolve, reject) => {
+        plyLoader.load(url, resolve, undefined, reject);
+      });
+      const hasColor = geometry.hasAttribute('color');
+      const material = new THREE.PointsMaterial({
+        size:            1.0,
+        vertexColors:    hasColor,
+        color:           hasColor ? undefined : 0x00cc44,
+        sizeAttenuation: true,
+      });
+      coveragePoints = new THREE.Points(geometry, material);
+      coveragePoints.rotation.x = -Math.PI / 2;
+      scene.add(coveragePoints);
+      fitCamera(coveragePoints, camera, controls);
+    } catch (err) {
+      console.error('Coverage PLY laden mislukt:', err);
+      showPlaceholder();
+    } finally {
+      setLoading(false);
+    }
+  }
+
+  // Expose for thumbnails.js
+  window.loadCoverage = (dateKey) => loadCoveragePLY(`/api/coverage/pointcloud/${dateKey}`);
 
   hidePlaceholder();
   setLoading(true);
