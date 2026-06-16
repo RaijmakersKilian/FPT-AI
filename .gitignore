@@ -10,3 +10,6 @@ Frontend/Video's/Copy of Kopie van AP 08-12-2025.MP4.mp4
 
 # Frontend Supabase config (contains anon key) - keep local
 Frontend/supabase-config.js
+
+# Frontend Azure config (account name / optional SAS) - keep local
+Frontend/azure-config.js
