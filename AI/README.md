@@ -327,6 +327,124 @@ Open `mesh.ply` in Blender, MeshLab, CloudCompare, or Windows 3D Viewer. The
 mesh is not yet a clean BIM model: scale is arbitrary without camera calibration
 or GPS/IMU, and moving traffic/background geometry can still be reconstructed.
 
+## Experimental 3D Model Comparison
+
+Use this to compare a current/as-built reconstruction against the completed
+bridge model. The current implementation performs a rough PCA normalization and
+nearest-neighbor distance comparison, so it is a feasibility test rather than a
+survey-accurate BIM comparison.
+
+```powershell
+python -m ftp_ai.cli compare-3d-model `
+  --current outputs/mast3r_slam_bridge1_fast/pointcloud.ply `
+  --final-model ../Frontend/KCPT_Ki_centered.glb `
+  --output outputs/comparison_mast3r_bridge1_vs_final `
+  --max-current-points 150000 `
+  --max-model-points 150000
+```
+
+Outputs:
+
+- `comparison_summary.json`: distance statistics and coverage percentages
+- `comparison_preview.jpg`: top-down visual comparison
+- `difference_pointcloud.ply`: current reconstruction colored by distance
+- `normalized_final_model_points.ply`: sampled final model points in normalized space
+
+Color meaning:
+
+- green: current reconstruction is close to the completed model
+- yellow/orange: some difference
+- red: far from the model, noisy, background, or not aligned
+
+Current test results:
+
+- MASt3R-SLAM bridge point cloud vs final model:
+  - median distance: `0.02386`
+  - P90 distance: `0.08911`
+  - close coverage: `68.6%`
+- COLMAP dense point cloud vs final model:
+  - median distance: `0.0503`
+  - P90 distance: `0.31626`
+  - close coverage: `42.49%`
+
+Interpretation: this supports the teacher's idea that we can compare the current
+state with the finished model, but final progress tracking needs better
+alignment: camera calibration, control points, GPS/RTK, or manually selected
+corresponding points between the reconstruction and BIM/GLB model.
+
+## vSLAM And Gaussian Splat Experiments
+
+MASt3R-SLAM is used as the current vSLAM test. It runs in WSL with the external
+MASt3R-SLAM checkout and saves a point cloud plus camera trajectory.
+
+```powershell
+wsl -d Ubuntu-24.04 -u root -- bash /mnt/c/Users/kilia/Documents/Howest\ 2025-2026/Courses\ Semester\ 2/IndustryProject/Project/FTP-AI/AI/scripts/run_mast3r_bridge1_fast.sh
+```
+
+Current vSLAM result:
+
+- input: `data/raw/BridgeVid1-271223.mp4`
+- output point cloud: `outputs/mast3r_slam_bridge1_fast/pointcloud.ply`
+- output trajectory: `outputs/mast3r_slam_bridge1_fast/trajectory.txt`
+- point cloud vertices: `3,077,001`
+- trajectory/keyframes: `30`
+
+Gaussian Splat seed test:
+
+```powershell
+python -m ftp_ai.cli pointcloud-to-gaussian-splat `
+  --input outputs/mast3r_slam_bridge1_fast/pointcloud.ply `
+  --output outputs/gaussian_splat_bridge1_seed `
+  --max-points 250000 `
+  --splat-scale 0.008 `
+  --opacity 0.7
+```
+
+This writes:
+
+- `gaussian_splat_seed.ply`
+- `gaussian_splat_preview.jpg`
+- `gaussian_splat_summary.json`
+
+Important: this is a Gaussian Splat seed, not a fully trained 3DGS scene. A real
+3DGS test should train from source images and camera poses, preferably from
+COLMAP.
+
+Video-first Gaussian Splat seed test:
+
+```powershell
+python -m ftp_ai.cli video-to-gaussian-splat `
+  --video data/raw/BridgeVid1-271223.mp4 `
+  --output outputs/video_gaussian_splat_bridgevid1_fast `
+  --colmap-path .external/colmap/nocuda/bin/colmap.exe `
+  --frame-interval 1.0 `
+  --max-frames 24 `
+  --blur-threshold 20 `
+  --max-image-size 1200 `
+  --sequential-overlap 12 `
+  --max-points 150000 `
+  --splat-scale 0.01 `
+  --opacity 0.7
+```
+
+This starts from the MP4, extracts frames, runs COLMAP sparse reconstruction,
+and writes a splat seed. The first BridgeVid1 test completed, but COLMAP only
+registered `2 / 24` frames and reconstructed `95` sparse points, so the output
+proves the pipeline works but is not a usable 3DGS scene yet.
+
+Proper Nerfstudio/Splatfacto testing is documented in:
+
+```text
+docs/nerfstudio_splatfacto_testing.md
+```
+
+Reusable WSL script:
+
+```bash
+PROCESS_ONLY=1 NUM_FRAMES_TARGET=40 COLMAP_CMD=colmap \
+  bash AI/scripts/run_nerfstudio_bridge1_splat.sh
+```
+
 ## Current Classes
 
 The baseline progress classes are:

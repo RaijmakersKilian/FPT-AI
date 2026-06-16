@@ -15,6 +15,7 @@ models/
 *.mov
 *.avi
 *.mkv
+*.log
 
 .env
 .DS_Store
