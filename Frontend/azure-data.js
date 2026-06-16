@@ -22,6 +22,33 @@
   const SAS = cfg.sasToken ? cfg.sasToken.replace(/^\?/, '') : '';
   const VIDEO_EXT = /\.(mp4|mov|avi|mkv|webm)$/i;
 
+  // Filenames carry the flight date: DDMMYYYY (e.g. 18112023) or DDMMYY (271223).
+  function parseDateFromName(name) {
+    const m8 = name.match(/(\d{2})(\d{2})(\d{4})/);
+    if (m8) {
+      const d = new Date(+m8[3], +m8[2] - 1, +m8[1]);
+      if (!isNaN(d)) return d;
+    }
+    const m6 = name.match(/(\d{2})(\d{2})(\d{2})(?!\d)/);
+    if (m6) {
+      const d = new Date(2000 + +m6[3], +m6[2] - 1, +m6[1]);
+      if (!isNaN(d)) return d;
+    }
+    return null;
+  }
+  function dateLabel(name) {
+    const d = parseDateFromName(name);
+    return d ? d.toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' }) : name;
+  }
+  function byDate(a, b) {
+    const da = parseDateFromName(a);
+    const db = parseDateFromName(b);
+    if (da && db) return da - db;
+    if (da) return -1;
+    if (db) return 1;
+    return a.localeCompare(b);
+  }
+
   function blobUrl(container, name) {
     const path = name.split('/').map(encodeURIComponent).join('/');
     const u = `${BASE}/${container}/${path}`;
@@ -76,7 +103,7 @@
       v.load();
     }
     const t = elTitle();
-    if (t) t.textContent = `Video: ${name}`;
+    if (t) t.textContent = `Video: ${dateLabel(name)}`;
   }
 
   function buildThumbs(videos) {
@@ -88,9 +115,10 @@
       const el = document.createElement('div');
       el.className = 'thumb';
       el.dataset.name = name;
+      el.title = name;
       el.innerHTML =
         `<div class="frame"><video class="thumb-video" muted playsinline preload="metadata" src="${url}#t=0.5"></video></div>` +
-        `<div class="date">${name}</div>`;
+        `<div class="date">${dateLabel(name)}</div>`;
       el.addEventListener('click', () => {
         wrap.querySelectorAll('.thumb').forEach((t) => t.classList.remove('active'));
         el.classList.add('active');
@@ -103,7 +131,7 @@
   async function init() {
     const wrap = elThumbs();
     const all = await listBlobs(cfg.videosContainer);
-    const videos = all.filter((n) => VIDEO_EXT.test(n));
+    const videos = all.filter((n) => VIDEO_EXT.test(n)).sort(byDate);
     if (!videos.length) {
       if (wrap && !wrap.querySelector('.thumb-empty')) {
         showEmpty(`No videos in the Azure “${cfg.videosContainer}” container yet. Upload .mp4 files.`);
