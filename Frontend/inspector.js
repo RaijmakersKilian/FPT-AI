@@ -104,5 +104,3 @@ function _parseGroup(group) {
 }
 
 window.loadCoverageData = (dateKey) => populateInspector(`/api/coverage/data/${dateKey}`);
-
-document.addEventListener('DOMContentLoaded', populateInspector);
