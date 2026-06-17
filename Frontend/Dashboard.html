@@ -9,6 +9,13 @@
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
 <link rel="icon" type="image/png" href="Images/logo.png">
 <link rel="stylesheet" href="Dashboard.css">
+<!-- Azure Blob Storage: load videos from the "videos" container -->
+<script defer src="azure-config.js"></script>
+<script defer src="azure-data.js"></script>
+<!-- PDF export (client-side) -->
+<script defer src="https://cdn.jsdelivr.net/npm/html2canvas@1.4.1/dist/html2canvas.min.js"></script>
+<script defer src="https://cdn.jsdelivr.net/npm/jspdf@2.5.1/dist/jspdf.umd.min.js"></script>
+<script defer src="export.js"></script>
 <script type="importmap">
 {
   "imports": {
@@ -131,6 +138,7 @@
         <div class="dots" id="timeline-dots">
           <i class="on"></i><i></i>
         </div>
+        <div class="dots" id="thumb-dots"></div>
       </div>
     </div>
 

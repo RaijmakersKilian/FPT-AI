@@ -3,4 +3,5 @@ opencv-python>=4.9
 pillow>=10.0
 pydantic>=2.7
 rich>=13.7
-
+scipy>=1.17
+trimesh>=4.12

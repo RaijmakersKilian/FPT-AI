@@ -137,3 +137,51 @@ document.addEventListener('keydown', (event) => {
     closeExportMenu();
   }
 });
+
+// Video timeline carousel: overlay arrows + page dots scroll the single-row strip.
+(function () {
+  const track = document.getElementById('thumbs');
+  const prev = document.getElementById('thumb-prev');
+  const next = document.getElementById('thumb-next');
+  const dotsWrap = document.getElementById('thumb-dots');
+  if (!track || !prev || !next) return;
+
+  const pageStep = () => Math.max(160, Math.round(track.clientWidth * 0.8));
+  const pageCount = () => Math.max(1, Math.round(track.scrollWidth / Math.max(1, track.clientWidth)));
+  const currentPage = () => Math.round(track.scrollLeft / Math.max(1, track.clientWidth));
+
+  function buildDots() {
+    if (!dotsWrap) return;
+    const n = pageCount();
+    dotsWrap.innerHTML = '';
+    if (n <= 1) return; // nothing to page through
+    for (let i = 0; i < n; i++) {
+      const dot = document.createElement('i');
+      dot.addEventListener('click', () =>
+        track.scrollTo({ left: i * track.clientWidth, behavior: 'smooth' }));
+      dotsWrap.appendChild(dot);
+    }
+    highlight();
+  }
+  function highlight() {
+    if (!dotsWrap) return;
+    const cur = currentPage();
+    Array.from(dotsWrap.children).forEach((d, i) => d.classList.toggle('on', i === cur));
+  }
+  function updateArrows() {
+    const max = track.scrollWidth - track.clientWidth - 1;
+    const noScroll = track.scrollWidth <= track.clientWidth + 2;
+    prev.disabled = noScroll || track.scrollLeft <= 0;
+    next.disabled = noScroll || track.scrollLeft >= max;
+  }
+
+  prev.addEventListener('click', () => track.scrollBy({ left: -pageStep(), behavior: 'smooth' }));
+  next.addEventListener('click', () => track.scrollBy({ left: pageStep(), behavior: 'smooth' }));
+  track.addEventListener('scroll', () => { updateArrows(); highlight(); }, { passive: true });
+  window.addEventListener('resize', () => { buildDots(); updateArrows(); });
+
+  // Build once now and again whenever azure-data.js injects the thumbnails.
+  buildDots();
+  updateArrows();
+  new MutationObserver(() => { buildDots(); updateArrows(); }).observe(track, { childList: true });
+})();
