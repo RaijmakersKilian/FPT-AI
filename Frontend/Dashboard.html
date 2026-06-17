@@ -7,7 +7,15 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<link rel="icon" type="image/png" href="Images/logo.png">
 <link rel="stylesheet" href="Dashboard.css">
+<!-- Azure Blob Storage: load videos from the "videos" container -->
+<script defer src="azure-config.js"></script>
+<script defer src="azure-data.js"></script>
+<!-- PDF export (client-side) -->
+<script defer src="https://cdn.jsdelivr.net/npm/html2canvas@1.4.1/dist/html2canvas.min.js"></script>
+<script defer src="https://cdn.jsdelivr.net/npm/jspdf@2.5.1/dist/jspdf.umd.min.js"></script>
+<script defer src="export.js"></script>
 <script type="importmap">
 {
   "imports": {
@@ -19,6 +27,8 @@
 </script>
 <script src="thumbnails.js" defer></script>
 <script src="inspector.js" defer></script>
+<script src="chart.js" defer></script>
+<script src="pdf.js" defer></script>
 <script type="module" src="viewer.js"></script>
 </head>
 
@@ -65,11 +75,11 @@
       <div class="card">
         <div class="card-head">
           <span class="ic"><svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><path d="M14 2v6h6"/></svg></span>
-          <span class="card-title" id="main-video-title">Video: DVC5543210</span>
+          <span class="card-title" id="main-video-title">Video: 18 Nov 2023</span>
         </div>
         <div class="video-frame">
           <!-- Stylised aerial cityscape -->
-            <video id="main-video" controls muted src="Video's/Kopie van DJI_0072.MP4.mp4"></video>
+            <video id="main-video" controls muted src="Video's/18112023.MP4.mp4"></video>
           
         </div>
       </div>
@@ -79,31 +89,56 @@
           <span class="ic"><svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="m22 8-6 4 6 4V8Z"/><rect x="2" y="6" width="14" height="12" rx="2"/></svg></span>
           <span class="card-title">Video timeline archive</span>
         </div>
+        <div class="timeline-wrapper">
+        <button class="timeline-arrow" id="timeline-prev" aria-label="Vorige" disabled>&#8249;</button>
         <div class="thumbs" id="thumbs">
-          <div class="thumb" data-src="Video's/Kopie van DJI_0072.MP4.mp4" data-name="DJI_0072">
-            <div class="frame"><video class="thumb-video" muted playsinline preload="metadata" src="Video's/Kopie van DJI_0072.MP4.mp4"></video></div>
-            <div class="date">October 21</div>
+          <div class="thumb active" data-src="Video's/18112023.MP4.mp4" data-name="18 Nov 2023" data-coverage="18112023">
+            <div class="frame"><video class="thumb-video" muted playsinline preload="metadata" src="Video's/18112023.MP4.mp4"></video></div>
+            <div class="date">18 Nov 2023</div>
           </div>
-          <div class="thumb" data-src="Video's/Kopie van DJI_0072.MP4.mp4" data-name="DJI_0072">
-            <div class="frame"><video class="thumb-video" muted playsinline preload="metadata" src="Video's/Kopie van DJI_0072.MP4.mp4"></video></div>
-            <div class="date">October 22</div>
+          <div class="thumb" data-src="Video's/Kopie van DVC 27122023.MP4" data-name="27 Dec 2023" data-coverage="27122023">
+            <div class="frame"><video class="thumb-video" muted playsinline preload="metadata" src="Video's/Kopie van DVC 27122023.MP4"></video></div>
+            <div class="date">27 Dec 2023</div>
           </div>
-          <div class="thumb active" data-src="Video's/Kopie van DVC 23102024.MP4" data-name="DVC 23102024">
-            <div class="frame"><video class="thumb-video" muted playsinline preload="metadata" src="Video's/Kopie van DVC 23102024.MP4"></video></div>
-            <div class="date">October 24</div>
+          <div class="thumb" data-src="Video's/12012024.MP4.mp4" data-name="12 Jan 2024" data-coverage="12012024">
+            <div class="frame"><video class="thumb-video" muted playsinline preload="metadata" src="Video's/12012024.MP4.mp4"></video></div>
+            <div class="date">12 Jan 2024</div>
           </div>
-          <div class="thumb" data-src="Video's/Kopie van AP 08-12-2025.MP4.mp4" data-name="AP 08-12-2025">
-            <div class="frame"><video class="thumb-video" muted playsinline preload="metadata" src="Video's/Kopie van AP 08-12-2025.MP4.mp4"></video></div>
-            <div class="date">October 28</div>
+          <div class="thumb" data-src="Video's/13022024.MP4.mp4" data-name="13 Feb 2024" data-coverage="13022024">
+            <div class="frame"><video class="thumb-video" muted playsinline preload="metadata" src="Video's/13022024.MP4.mp4"></video></div>
+            <div class="date">13 Feb 2024</div>
           </div>
-          <div class="thumb" data-src="Video's/Copy of Kopie van AP 08-12-2025.MP4.mp4" data-name="AP 08-12-2025 (copy)">
-            <div class="frame"><video class="thumb-video" muted playsinline preload="metadata" src="Video's/Copy of Kopie van AP 08-12-2025.MP4.mp4"></video></div>
-            <div class="date">October 29</div>
+          <div class="thumb" data-src="Video's/04032024.MP4.mp4" data-name="04 Mrt 2024" data-coverage="04032024">
+            <div class="frame"><video class="thumb-video" muted playsinline preload="metadata" src="Video's/04032024.MP4.mp4"></video></div>
+            <div class="date">04 Mrt 2024</div>
+          </div>
+          <div class="thumb" data-src="Video's/19032024.MP4.mp4" data-name="19 Mrt 2024" data-coverage="19032024">
+            <div class="frame"><video class="thumb-video" muted playsinline preload="metadata" src="Video's/19032024.MP4.mp4"></video></div>
+            <div class="date">19 Mrt 2024</div>
+          </div>
+          <div class="thumb" data-src="Video's/16062024.mp4" data-name="16 Jun 2024" data-coverage="16062024">
+            <div class="frame"><video class="thumb-video" muted playsinline preload="metadata" src="Video's/16062024.mp4"></video></div>
+            <div class="date">16 Jun 2024</div>
+          </div>
+          <div class="thumb" data-src="Video's/06072024.mp4" data-name="06 Jul 2024" data-coverage="06072024">
+            <div class="frame"><video class="thumb-video" muted playsinline preload="metadata" src="Video's/06072024.mp4"></video></div>
+            <div class="date">06 Jul 2024</div>
+          </div>
+          <div class="thumb" data-src="Video's/20082024.mp4" data-name="20 Aug 2024" data-coverage="20082024">
+            <div class="frame"><video class="thumb-video" muted playsinline preload="metadata" src="Video's/20082024.mp4"></video></div>
+            <div class="date">20 Aug 2024</div>
+          </div>
+          <div class="thumb" data-src="Video's/23102024.MP4.mp4" data-name="23 Okt 2024" data-coverage="23102024">
+            <div class="frame"><video class="thumb-video" muted playsinline preload="metadata" src="Video's/23102024.MP4.mp4"></video></div>
+            <div class="date">23 Okt 2024</div>
           </div>
         </div>
-        <div class="dots">
-          <i></i><i></i><i class="on"></i><i></i><i></i>
+        <button class="timeline-arrow" id="timeline-next" aria-label="Volgende">&#8250;</button>
         </div>
+        <div class="dots" id="timeline-dots">
+          <i class="on"></i><i></i>
+        </div>
+        <div class="dots" id="thumb-dots"></div>
       </div>
     </div>
 
@@ -158,99 +193,8 @@
         <span class="card-title">4D Progress · Planned vs Actual</span>
       </div>
       <div class="chart-wrap">
-        <svg viewBox="0 0 560 280" xmlns="http://www.w3.org/2000/svg" preserveAspectRatio="none">
-          <defs>
-            <linearGradient id="gp" x1="0" y1="0" x2="0" y2="1">
-              <stop offset="0%"   stop-color="#00c8ff" stop-opacity="0.18"/>
-              <stop offset="100%" stop-color="#00c8ff" stop-opacity="0.01"/>
-            </linearGradient>
-            <linearGradient id="ga" x1="0" y1="0" x2="0" y2="1">
-              <stop offset="0%"   stop-color="#0066ff" stop-opacity="0.13"/>
-              <stop offset="100%" stop-color="#0066ff" stop-opacity="0.01"/>
-            </linearGradient>
-          </defs>
-
-          <!-- Y labels -->
-          <g font-family="Inter" font-size="11.5" fill="#93a1b8" text-anchor="end">
-            <text x="46" y="56">100%</text>
-            <text x="46" y="100">75%</text>
-            <text x="46" y="144">50%</text>
-            <text x="46" y="188">25%</text>
-            <text x="46" y="232">0%</text>
-          </g>
-
-          <!-- Horizontal grid lines -->
-          <g stroke="#e8edf5" stroke-width="1">
-            <line x1="52" y1="52"  x2="542" y2="52"/>
-            <line x1="52" y1="96"  x2="542" y2="96"/>
-            <line x1="52" y1="140" x2="542" y2="140"/>
-            <line x1="52" y1="184" x2="542" y2="184"/>
-            <line x1="52" y1="228" x2="542" y2="228"/>
-          </g>
-
-          <!-- Vertical guides -->
-          <g stroke="#eef1f7" stroke-width="1">
-            <line x1="52"  y1="52" x2="52"  y2="228"/>
-            <line x1="174" y1="52" x2="174" y2="228"/>
-            <line x1="298" y1="52" x2="298" y2="228"/>
-            <line x1="420" y1="52" x2="420" y2="228"/>
-            <line x1="542" y1="52" x2="542" y2="228"/>
-          </g>
-
-          <!-- Area fills -->
-          <polygon fill="url(#gp)" points="52,186 174,163 298,149 420,119 542,57 542,228 52,228"/>
-          <polygon fill="url(#ga)" points="52,191 174,166 298,156 420,129 542,68 542,228 52,228"/>
-
-          <!-- PLANNED (dashed cyan) -->
-          <polyline fill="none" stroke="#00c8ff" stroke-width="2.5" stroke-dasharray="7 4"
-            stroke-linecap="round" stroke-linejoin="round"
-            points="52,186 174,163 298,149 420,119 542,57"/>
-          <g fill="white" stroke="#00c8ff" stroke-width="2.2">
-            <circle cx="52"  cy="186" r="4"/>
-            <circle cx="174" cy="163" r="4"/>
-            <circle cx="298" cy="149" r="4"/>
-            <circle cx="420" cy="119" r="4"/>
-            <circle cx="542" cy="57"  r="4"/>
-          </g>
-
-          <!-- ACTUAL (solid blue) -->
-          <polyline fill="none" stroke="#0066ff" stroke-width="2.8"
-            stroke-linecap="round" stroke-linejoin="round"
-            points="52,191 174,166 298,156 420,129 542,68"/>
-          <g fill="#0066ff">
-            <circle cx="52"  cy="191" r="4.5"/>
-            <circle cx="174" cy="166" r="4.5"/>
-            <circle cx="298" cy="156" r="4.5"/>
-            <circle cx="420" cy="129" r="4.5"/>
-            <circle cx="542" cy="68"  r="4.5"/>
-          </g>
-          <g fill="white">
-            <circle cx="52"  cy="191" r="2"/>
-            <circle cx="174" cy="166" r="2"/>
-            <circle cx="298" cy="156" r="2"/>
-            <circle cx="420" cy="129" r="2"/>
-            <circle cx="542" cy="68"  r="2"/>
-          </g>
-
-          <!-- X labels -->
-          <g font-family="Inter" font-size="11.5" fill="#93a1b8" text-anchor="middle">
-            <text x="52"  y="248">Dec '23</text>
-            <text x="174" y="248">Mar '24</text>
-            <text x="298" y="248">Jun '24</text>
-            <text x="420" y="248">Sep '24</text>
-            <text x="542" y="248">Oct '24</text>
-          </g>
-
-          <!-- Legend -->
-          <g font-family="Inter" font-size="11" fill="#5a6b85">
-            <line x1="340" y1="268" x2="360" y2="268" stroke="#00c8ff" stroke-width="2.2" stroke-dasharray="6 3"/>
-            <circle cx="350" cy="268" r="3.5" fill="white" stroke="#00c8ff" stroke-width="2"/>
-            <text x="366" y="272">Planned</text>
-            <line x1="432" y1="268" x2="452" y2="268" stroke="#0066ff" stroke-width="2.5"/>
-            <circle cx="442" cy="268" r="3.8" fill="#0066ff"/>
-            <circle cx="442" cy="268" r="1.6" fill="white"/>
-            <text x="458" y="272">Actual</text>
-          </g>
+        <svg viewBox="0 0 560 285" xmlns="http://www.w3.org/2000/svg" preserveAspectRatio="none">
+          <defs></defs>
         </svg>
       </div>
     </div>

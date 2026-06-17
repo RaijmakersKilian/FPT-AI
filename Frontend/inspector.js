@@ -1,55 +1,44 @@
-async function populateInspector() {
+async function populateInspector(url = '/api/coverage/data') {
   let categories = [];
   let summary    = null;
 
   try {
-    const r = await fetch('/api/coverage/data');
+    const r = await fetch(url);
     if (!r.ok) throw new Error(r.status);
     const data = await r.json();
     summary = data.summary || null;
 
     if (data.results) {
-      // Per-type: prefer [Dutch  [English]] mapped names; also include unmapped Missing items
-      const mapped = new Map();
+      const grouped = new Map();
+
       for (const row of data.results) {
-        const m = row.group.match(/^(.+?)\s+\[(.+?)\]$/);
-        if (m) {
-          // Mapped group — deduplicate by English name
-          const key = m[2];
-          if (!mapped.has(key)) {
-            mapped.set(key, { name: m[1], n_elements: 0, coverage_sum: 0, count: 0 });
-          }
-          const g = mapped.get(key);
-          g.n_elements   += row.n_elements;
-          g.coverage_sum += row.coverage;
-          g.count        += 1;
-        } else if (row.coverage < 0.30) {
-          // Unmapped but Missing — show with cleaned raw name
-          const raw = row.group.split(':')[0].trim();
-          if (!raw || raw === ':') continue;
-          const key = raw;
-          if (!mapped.has(key)) {
-            mapped.set(key, { name: raw, n_elements: 0, coverage_sum: 0, count: 0 });
-          }
-          const g = mapped.get(key);
-          g.n_elements   += row.n_elements;
-          g.coverage_sum += row.coverage;
-          g.count        += 1;
+        const { key, name } = _parseGroup(row.group);
+        if (!key) continue;
+
+        if (!grouped.has(key)) {
+          grouped.set(key, { name, n_elements: 0, coverage_sum: 0, count: 0 });
         }
+        const g = grouped.get(key);
+        g.n_elements   += row.n_elements;
+        g.coverage_sum += row.coverage;
+        g.count        += 1;
       }
-      categories = [...mapped.values()].map(g => ({
-        name: g.name,
-        meta: `${g.n_elements} el · ${(g.coverage_sum / g.count * 100).toFixed(0)}%`,
-        pct:  g.coverage_sum / g.count,
-      }));
+
+      categories = [...grouped.values()]
+        .map(g => ({
+          name: g.name,
+          meta: `${g.n_elements} el · ${(g.coverage_sum / g.count * 100).toFixed(0)}%`,
+          pct:  g.coverage_sum / g.count,
+        }))
+        .sort((a, b) => a.pct - b.pct || a.name.localeCompare(b.name));
+
     } else if (data.segments) {
-      // Per-segment (coverage_analysis.py): { seg, from_m, to_m, coverage_pct }
       const n = data.segments.length;
       categories = data.segments.map(s => {
         let label;
-        if (s.seg === 0)     label = 'Linker oever';
-        else if (s.seg === n - 1) label = 'Rechter oever';
-        else                 label = `Overspanning ${s.seg}`;
+        if (s.seg === 0)          label = 'Mố A1';
+        else if (s.seg === n - 1) label = 'Mố A2';
+        else                      label = `Nhịp ${s.seg}`;
         return {
           name: label,
           meta: `${Math.round(s.from_m)}–${Math.round(s.to_m)} m · ${s.coverage_pct}%`,
@@ -89,5 +78,31 @@ async function populateInspector() {
     if (secEl) secEl.textContent = `${summary.built}/${total}`;
   }
 }
+
+// Extraheert een leesbare naam en groeperingssleutel uit een BIM-groepnaam.
+function _parseGroup(group) {
+  if (!group) return { key: null, name: null };
+  if (group === ':') return { key: null, name: null };
+
+  // "Vietnamese naam  [English key]" → English naam tonen, groeperen op English key
+  const bracketM = group.match(/^(.+?)\s+\[(.+?)\]$/);
+  if (bracketM) {
+    return { key: bracketM[2].trim(), name: bracketM[2].trim() };
+  }
+
+  // "TypeCode:Beschrijving:" of "TypeCode:TypeCode:" (BIM interne namen)
+  if (group.includes(':')) {
+    const parts = group.split(':').map(p => p.trim()).filter(Boolean);
+    if (parts.length === 0) return { key: null, name: null };
+    const code = parts[0];
+    // Als alle delen gelijk zijn, toon gewoon de code
+    const desc = parts.find(p => p !== code) || code;
+    return { key: code, name: desc };
+  }
+
+  return { key: group, name: group };
+}
+
+window.loadCoverageData = (dateKey) => populateInspector(`/api/coverage/data/${dateKey}`);
 
 document.addEventListener('DOMContentLoaded', populateInspector);

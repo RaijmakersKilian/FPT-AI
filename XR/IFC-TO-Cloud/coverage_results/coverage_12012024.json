@@ -1,0 +1,155 @@
+{
+  "icp": {
+    "fitness": 0.0,
+    "rmse": 0.0
+  },
+  "bridge_length_m": 493.95,
+  "segments": [
+    {
+      "seg": 0,
+      "from_m": 0.0,
+      "to_m": 49.39,
+      "total_pts": 47187,
+      "covered_pts": 32471,
+      "coverage_pct": 68.8,
+      "status": "Partial",
+      "color_rgb": [
+        1.0,
+        0.55,
+        0.0
+      ]
+    },
+    {
+      "seg": 1,
+      "from_m": 49.39,
+      "to_m": 98.79,
+      "total_pts": 52129,
+      "covered_pts": 51089,
+      "coverage_pct": 98.0,
+      "status": "Built",
+      "color_rgb": [
+        0.1,
+        0.85,
+        0.2
+      ]
+    },
+    {
+      "seg": 2,
+      "from_m": 98.79,
+      "to_m": 148.18,
+      "total_pts": 51059,
+      "covered_pts": 46525,
+      "coverage_pct": 91.1,
+      "status": "Built",
+      "color_rgb": [
+        0.1,
+        0.85,
+        0.2
+      ]
+    },
+    {
+      "seg": 3,
+      "from_m": 148.18,
+      "to_m": 197.58,
+      "total_pts": 49136,
+      "covered_pts": 42859,
+      "coverage_pct": 87.2,
+      "status": "Built",
+      "color_rgb": [
+        0.1,
+        0.85,
+        0.2
+      ]
+    },
+    {
+      "seg": 4,
+      "from_m": 197.58,
+      "to_m": 246.97,
+      "total_pts": 50007,
+      "covered_pts": 41300,
+      "coverage_pct": 82.6,
+      "status": "Built",
+      "color_rgb": [
+        0.1,
+        0.85,
+        0.2
+      ]
+    },
+    {
+      "seg": 5,
+      "from_m": 246.97,
+      "to_m": 296.37,
+      "total_pts": 54714,
+      "covered_pts": 43081,
+      "coverage_pct": 78.7,
+      "status": "Partial",
+      "color_rgb": [
+        1.0,
+        0.55,
+        0.0
+      ]
+    },
+    {
+      "seg": 6,
+      "from_m": 296.37,
+      "to_m": 345.76,
+      "total_pts": 48667,
+      "covered_pts": 46374,
+      "coverage_pct": 95.3,
+      "status": "Built",
+      "color_rgb": [
+        0.1,
+        0.85,
+        0.2
+      ]
+    },
+    {
+      "seg": 7,
+      "from_m": 345.76,
+      "to_m": 395.16,
+      "total_pts": 54814,
+      "covered_pts": 44011,
+      "coverage_pct": 80.3,
+      "status": "Built",
+      "color_rgb": [
+        0.1,
+        0.85,
+        0.2
+      ]
+    },
+    {
+      "seg": 8,
+      "from_m": 395.16,
+      "to_m": 444.55,
+      "total_pts": 52079,
+      "covered_pts": 49536,
+      "coverage_pct": 95.1,
+      "status": "Built",
+      "color_rgb": [
+        0.1,
+        0.85,
+        0.2
+      ]
+    },
+    {
+      "seg": 9,
+      "from_m": 444.55,
+      "to_m": 493.95,
+      "total_pts": 40208,
+      "covered_pts": 31629,
+      "coverage_pct": 78.7,
+      "status": "Partial",
+      "color_rgb": [
+        1.0,
+        0.55,
+        0.0
+      ]
+    }
+  ],
+  "summary": {
+    "built": 7,
+    "partial": 3,
+    "missing": 0,
+    "total_coverage_pct": 85.8
+  }
+}

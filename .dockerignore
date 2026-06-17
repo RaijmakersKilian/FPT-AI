@@ -1,0 +1,27 @@
+# Git
+.git
+.gitignore
+
+# Large data files (provided via volume at runtime)
+*.ply
+*.ifc
+Frontend/Video's/
+
+# Python cache
+__pycache__/
+*.pyc
+*.pyo
+.pytest_cache/
+
+# Virtual environments
+.venv/
+venv/
+env/
+
+# Secrets
+.env
+backend/.env
+
+# Dev tools
+.claude/
+*.md

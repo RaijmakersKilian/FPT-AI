@@ -8,6 +8,8 @@ from rich.console import Console
 from .batch import run_roi_batch
 from .classification import IdentitySegmentClassifier
 from .config import PipelineConfig
+from .gaussian_splat import pointcloud_to_gaussian_splat, video_to_gaussian_splat
+from .model_comparison import compare_reconstruction_to_model
 from .panorama import build_drone_panorama, build_slitscan_panorama, build_smooth_panorama, build_strip_panorama
 from .pipeline import run_image_pipeline, run_video_pipeline
 from .reconstruction import (
@@ -255,6 +257,67 @@ def main() -> None:
         default=False,
         help="Only run sparse SfM; skip dense cloud and mesh.",
     )
+
+    compare_3d_parser = subparsers.add_parser(
+        "compare-3d-model",
+        help="Compare a current reconstruction against the completed bridge model",
+    )
+    compare_3d_parser.add_argument("--current", type=Path, required=True, help="Current/as-built PLY reconstruction")
+    compare_3d_parser.add_argument("--final-model", type=Path, required=True, help="Completed bridge model (.glb/.gltf/.obj)")
+    compare_3d_parser.add_argument("--output", type=Path, required=True)
+    compare_3d_parser.add_argument("--max-current-points", type=int, default=200_000)
+    compare_3d_parser.add_argument("--max-model-points", type=int, default=200_000)
+    compare_3d_parser.add_argument("--sections", type=int, default=10, help="Number of slices along the bridge axis for per-section progress")
+    compare_3d_parser.add_argument("--icp-iterations", type=int, default=40, help="Trimmed ICP refinement iterations (0 disables ICP)")
+    compare_3d_parser.add_argument("--built-threshold", type=float, default=0.04, help="Normalized distance below which a model point counts as built")
+    compare_3d_parser.add_argument("--control-points-current", type=Path, default=None, help="JSON of picked landmarks on the current cloud (pick_control_points.py)")
+    compare_3d_parser.add_argument("--control-points-reference", type=Path, default=None, help="JSON of the same landmarks picked on the reference, same order")
+    compare_3d_parser.add_argument("--anchor-current", type=Path, default=None, help="JSON with one rough point near a bridge end on the current cloud (resolves the mirror ambiguity)")
+    compare_3d_parser.add_argument("--anchor-reference", type=Path, default=None, help="JSON with one rough point near the SAME bridge end on the reference")
+
+    splat_parser = subparsers.add_parser(
+        "pointcloud-to-gaussian-splat",
+        help="Convert a point cloud into an experimental 3D Gaussian Splat seed PLY",
+    )
+    splat_parser.add_argument("--input", type=Path, required=True, help="Input colored PLY point cloud")
+    splat_parser.add_argument("--output", type=Path, required=True)
+    splat_parser.add_argument("--max-points", type=int, default=250_000)
+    splat_parser.add_argument("--splat-scale", type=float, default=0.01)
+    splat_parser.add_argument("--opacity", type=float, default=0.65)
+
+    video_splat_parser = subparsers.add_parser(
+        "video-to-gaussian-splat",
+        help="Extract video frames, run COLMAP, and create an experimental Gaussian Splat seed",
+    )
+    video_splat_parser.add_argument("--video", type=Path, required=True)
+    video_splat_parser.add_argument("--output", type=Path, required=True)
+    video_splat_parser.add_argument(
+        "--colmap-path",
+        type=Path,
+        default=None,
+        help="Path to colmap.exe. Defaults to AI/.external/colmap/nocuda/bin/colmap.exe or PATH.",
+    )
+    video_splat_parser.add_argument("--frame-interval", type=float, default=1.0)
+    video_splat_parser.add_argument("--start-seconds", type=float, default=0.0)
+    video_splat_parser.add_argument("--max-frames", type=int, default=32)
+    video_splat_parser.add_argument("--blur-threshold", type=float, default=50.0)
+    video_splat_parser.add_argument("--max-image-size", type=int, default=1400)
+    video_splat_parser.add_argument("--sequential-overlap", type=int, default=12)
+    video_splat_parser.add_argument(
+        "--matcher",
+        choices=["sequential", "exhaustive"],
+        default="sequential",
+        help="COLMAP matcher. Use exhaustive for small frame sets when sequential matching registers too few frames.",
+    )
+    video_splat_parser.add_argument(
+        "--run-dense",
+        action="store_true",
+        default=False,
+        help="Also run dense COLMAP before converting to a splat seed. Slower, but more complete.",
+    )
+    video_splat_parser.add_argument("--max-points", type=int, default=250_000)
+    video_splat_parser.add_argument("--splat-scale", type=float, default=0.01)
+    video_splat_parser.add_argument("--opacity", type=float, default=0.65)
 
     dust3r_parser = subparsers.add_parser(
         "build-dust3r-3d",
@@ -511,6 +574,85 @@ def main() -> None:
             console.print(f"[green]Mesh faces:[/green] {summary['mesh_faces']}")
         console.print(f"[green]Summary:[/green] {args.output / 'summary.json'}")
         console.print(f"[green]Mesh target:[/green] {args.output / 'mesh.ply'}")
+        return
+    elif args.command == "compare-3d-model":
+        summary = compare_reconstruction_to_model(
+            current_ply=args.current,
+            final_model=args.final_model,
+            output_dir=args.output,
+            max_current_points=args.max_current_points,
+            max_model_points=args.max_model_points,
+            sections=args.sections,
+            icp_iterations=args.icp_iterations,
+            built_threshold=args.built_threshold,
+            control_points_current=args.control_points_current,
+            control_points_reference=args.control_points_reference,
+            anchor_current=args.anchor_current,
+            anchor_reference=args.anchor_reference,
+        )
+        progress = summary["progress_estimate"]
+        if summary["alignment"].get("method") == "control_points":
+            console.print(f"[green]Control-point RMS error:[/green] {summary['alignment']['rms_error']} (max {summary['alignment']['max_error']})")
+        elif summary["alignment"].get("method") == "anchor_disambiguated":
+            console.print(f"[green]Mirror resolved by anchor:[/green] {summary['alignment']['chosen_mirror']} (anchor dist {summary['alignment']['anchor_distance_chosen']} vs {summary['alignment']['anchor_distance_rejected']})")
+            if "warning" in summary["alignment"]:
+                console.print(f"[yellow]Warning:[/yellow] {summary['alignment']['warning']}")
+        console.print(f"[green]Median distance:[/green] {summary['distance_median']}")
+        console.print(f"[green]P90 distance:[/green] {summary['distance_p90']}")
+        console.print(f"[green]Close coverage:[/green] {summary['coverage_close_pct']}%")
+        console.print(f"[green]Model built (progress estimate):[/green] {progress['model_built_pct']}%")
+        for entry in progress["per_section"]:
+            console.print(f"[green]  Section {entry['section']}:[/green] {entry['built_pct']}% built ({entry['model_points']} model points)")
+        console.print(f"[green]Preview:[/green] {args.output / 'comparison_preview.jpg'}")
+        console.print(f"[green]Difference PLY:[/green] {args.output / 'difference_pointcloud.ply'}")
+        console.print(f"[green]Coverage PLY:[/green] {args.output / 'model_coverage_pointcloud.ply'}")
+        console.print(f"[green]Summary:[/green] {args.output / 'comparison_summary.json'}")
+        return
+    elif args.command == "pointcloud-to-gaussian-splat":
+        summary = pointcloud_to_gaussian_splat(
+            input_ply=args.input,
+            output_dir=args.output,
+            max_points=args.max_points,
+            splat_scale=args.splat_scale,
+            opacity=args.opacity,
+        )
+        console.print(f"[green]Splat points:[/green] {summary['splat_points']}")
+        console.print(f"[green]Gaussian Splat seed:[/green] {args.output / 'gaussian_splat_seed.ply'}")
+        console.print(f"[green]Preview:[/green] {args.output / 'gaussian_splat_preview.jpg'}")
+        console.print(f"[green]Summary:[/green] {args.output / 'gaussian_splat_summary.json'}")
+        return
+    elif args.command == "video-to-gaussian-splat":
+        summary = video_to_gaussian_splat(
+            video_path=args.video,
+            output_dir=args.output,
+            colmap_path=args.colmap_path,
+            frame_interval_seconds=args.frame_interval,
+            start_seconds=args.start_seconds,
+            max_frames=args.max_frames,
+            blur_threshold=args.blur_threshold,
+            max_image_size=args.max_image_size,
+            sequential_overlap=args.sequential_overlap,
+            matcher=args.matcher,
+            run_dense=args.run_dense,
+            max_points=args.max_points,
+            splat_scale=args.splat_scale,
+            opacity=args.opacity,
+        )
+        console.print(f"[green]Status:[/green] {summary['status']}")
+        if "source_point_cloud_kind" in summary:
+            console.print(f"[green]Source:[/green] {summary['source_point_cloud_kind']}")
+        for warning in summary.get("quality_warnings", []):
+            console.print(f"[yellow]Quality warning:[/yellow] {warning}")
+        outputs = summary.get("outputs", {})
+        if isinstance(outputs, dict):
+            if "source_point_cloud" in outputs:
+                console.print(f"[green]Source point cloud:[/green] {outputs['source_point_cloud']}")
+            if "gaussian_splat_seed" in outputs:
+                console.print(f"[green]Gaussian Splat seed:[/green] {outputs['gaussian_splat_seed']}")
+            if "gaussian_splat_preview" in outputs:
+                console.print(f"[green]Preview:[/green] {outputs['gaussian_splat_preview']}")
+            if "summary" in outputs:
+                console.print(f"[green]Summary:[/green] {outputs['summary']}")
         return
     elif args.command == "build-dust3r-3d":
         summary = build_dust3r_3d_from_video(
