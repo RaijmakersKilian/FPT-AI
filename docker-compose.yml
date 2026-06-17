@@ -1,0 +1,17 @@
+services:
+  backend:
+    build: .
+    restart: unless-stopped
+    ports:
+      - "${PORT:-8000}:8000"
+    environment:
+      DATABASE_URL: ${DATABASE_URL}
+      UPLOAD_DIR: /app/backend/storage/videos
+      REPORT_OUTPUT_DIR: /app/backend/storage/reports_pdf
+    volumes:
+      - ./Frontend:/app/Frontend
+      - ./XR:/app/XR
+      - backend_storage:/app/backend/storage
+
+volumes:
+  backend_storage:

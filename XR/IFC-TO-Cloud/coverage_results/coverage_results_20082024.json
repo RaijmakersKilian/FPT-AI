@@ -1,0 +1,347 @@
+{
+  "threshold": 5.0,
+  "results": [
+    {
+      "group": "BULONG M18_so1:BULONG M18_so1:",
+      "n_elements": 5,
+      "n_points": 50,
+      "coverage": 1.0
+    },
+    {
+      "group": "BULONG M18_so2:BULONG M18_so2:",
+      "n_elements": 5,
+      "n_points": 50,
+      "coverage": 1.0
+    },
+    {
+      "group": "BULONG M18_so3:BULONG M18_so3:",
+      "n_elements": 5,
+      "n_points": 50,
+      "coverage": 1.0
+    },
+    {
+      "group": "BULONG M18_so4:BULONG M18_so4:",
+      "n_elements": 5,
+      "n_points": 50,
+      "coverage": 1.0
+    },
+    {
+      "group": "Bê tông lót  [Approach concrete]",
+      "n_elements": 12,
+      "n_points": 1364,
+      "coverage": 1.0
+    },
+    {
+      "group": "Bản quá độ  [Transition slab]",
+      "n_elements": 12,
+      "n_points": 1556,
+      "coverage": 1.0
+    },
+    {
+      "group": "CHI TIET CON CONG:CHI TIET CON CONG:",
+      "n_elements": 103,
+      "n_points": 1030,
+      "coverage": 1.0
+    },
+    {
+      "group": "KCK_BTL TUONG CHAN_MODUL 1:KCK_BTL TUONG CHAN_MODUL 1:",
+      "n_elements": 1,
+      "n_points": 200,
+      "coverage": 1.0
+    },
+    {
+      "group": "KCK_BTL TUONG CHAN_MODUL 1_2:KCK_BTL TUONG CHAN_MODUL 1_2:",
+      "n_elements": 1,
+      "n_points": 200,
+      "coverage": 1.0
+    },
+    {
+      "group": "LOAI1_Tam Thep N1-1:LOAI1_Tam Thep N1-1:",
+      "n_elements": 104,
+      "n_points": 1040,
+      "coverage": 1.0
+    },
+    {
+      "group": "LOAI1_Tam Thep N1-2:LOAI1_Tam Thep N1-2:",
+      "n_elements": 104,
+      "n_points": 1040,
+      "coverage": 1.0
+    },
+    {
+      "group": "LOAI1_Tam Thep N1-3:LOAI1_Tam Thep N1-3:",
+      "n_elements": 104,
+      "n_points": 1040,
+      "coverage": 1.0
+    },
+    {
+      "group": "LOAI1_Thep La 20x10 N4:LOAI1_Thep La 20x10 N4:",
+      "n_elements": 819,
+      "n_points": 8190,
+      "coverage": 1.0
+    },
+    {
+      "group": "LOAI1_Thep La 20x10 N4a:LOAI1_Thep La 20x10 N4a:",
+      "n_elements": 823,
+      "n_points": 8230,
+      "coverage": 1.0
+    },
+    {
+      "group": "LOAI1_Thep La 20x10 N7:LOAI1_Thep La 20x10 N7:",
+      "n_elements": 208,
+      "n_points": 2080,
+      "coverage": 1.0
+    },
+    {
+      "group": "LOAI1_Thep La 20x20_N8:LOA1_Thep La 20x20_N8:",
+      "n_elements": 2,
+      "n_points": 20,
+      "coverage": 1.0
+    },
+    {
+      "group": "LOAI1_Thep La 20x20_N8:LOAI1_Thep La 20x20_N8:",
+      "n_elements": 204,
+      "n_points": 2040,
+      "coverage": 1.0
+    },
+    {
+      "group": "LOAI2A_CHI TIET CON CONG:LOAI2A_CHI TIET CON CONG:",
+      "n_elements": 1,
+      "n_points": 10,
+      "coverage": 1.0
+    },
+    {
+      "group": "LOAI2B_Thep Hop N6_nguocchieu:LOAI2B_Thep Hop N6_nguocchieu:",
+      "n_elements": 1,
+      "n_points": 10,
+      "coverage": 1.0
+    },
+    {
+      "group": "LOAI2C_Tam Thep N1-1:LOAI2C_Tam Thep N1-1:",
+      "n_elements": 1,
+      "n_points": 10,
+      "coverage": 1.0
+    },
+    {
+      "group": "LOAI2C_Tam Thep N1-2:LOAI2C_Tam Thep N1-2:",
+      "n_elements": 1,
+      "n_points": 10,
+      "coverage": 1.0
+    },
+    {
+      "group": "LOAI2C_Tam Thep N1-3:LOAI2C_Tam Thep N1-3:",
+      "n_elements": 1,
+      "n_points": 10,
+      "coverage": 1.0
+    },
+    {
+      "group": "LOAI2b_Thep Hop N3_nguocchieu:LOAI2b_Thep Hop N3_nguocchieu:",
+      "n_elements": 1,
+      "n_points": 10,
+      "coverage": 1.0
+    },
+    {
+      "group": "Thân mố  [Abutment body]",
+      "n_elements": 4,
+      "n_points": 800,
+      "coverage": 1.0
+    },
+    {
+      "group": "Thép hộp lan can  [Railing bar]",
+      "n_elements": 282,
+      "n_points": 2820,
+      "coverage": 1.0
+    },
+    {
+      "group": "Tường chắn  [Retaining wall]",
+      "n_elements": 8,
+      "n_points": 1468,
+      "coverage": 1.0
+    },
+    {
+      "group": "Tường đầu cầu  [End wall]",
+      "n_elements": 4,
+      "n_points": 384,
+      "coverage": 1.0
+    },
+    {
+      "group": "KCPT_DAM NGANG_I33:DN_I33 - Đoạn giữa dầm:",
+      "n_elements": 96,
+      "n_points": 960,
+      "coverage": 0.9979
+    },
+    {
+      "group": "Cấu kiện Ki  [Road support element]",
+      "n_elements": 70,
+      "n_points": 14000,
+      "coverage": 0.9859
+    },
+    {
+      "group": "KCPT_DAM NGANG_I33:DN_I33 - Dầm biên - Đoạn giữa dầm:",
+      "n_elements": 32,
+      "n_points": 320,
+      "coverage": 0.9812
+    },
+    {
+      "group": "Bê tông mố  [Abutment concrete]",
+      "n_elements": 8,
+      "n_points": 1600,
+      "coverage": 0.975
+    },
+    {
+      "group": "KCK_THOAT NUOC_2:KCK_THOAT NUOC_2:",
+      "n_elements": 108,
+      "n_points": 1080,
+      "coverage": 0.9722
+    },
+    {
+      "group": "KCPT_DAM NGANG_I33:DN_I33 - Đoạn đầu dầm:",
+      "n_elements": 48,
+      "n_points": 480,
+      "coverage": 0.9688
+    },
+    {
+      "group": "Lớp mặt cầu  [Road deck layer]",
+      "n_elements": 6,
+      "n_points": 1200,
+      "coverage": 0.9542
+    },
+    {
+      "group": "KCK_LUOI CHAN RAC:KCK_LUOI CHAN RAC:",
+      "n_elements": 216,
+      "n_points": 2160,
+      "coverage": 0.9519
+    },
+    {
+      "group": "Gờ lan can  [Railing post]",
+      "n_elements": 156,
+      "n_points": 9203,
+      "coverage": 0.9511
+    },
+    {
+      "group": "Đốt trên  [Upper segment]",
+      "n_elements": 4,
+      "n_points": 800,
+      "coverage": 0.9463
+    },
+    {
+      "group": "KCK_THOAT NUOC:KCK_THOAT NUOC:",
+      "n_elements": 108,
+      "n_points": 1080,
+      "coverage": 0.9352
+    },
+    {
+      "group": "KCPT_DAM NGANG_I24.54:DN_I24.54 - Đoạn đầu dầm:",
+      "n_elements": 192,
+      "n_points": 1920,
+      "coverage": 0.9302
+    },
+    {
+      "group": "Bản mặt cầu  [Road deck]",
+      "n_elements": 20,
+      "n_points": 4000,
+      "coverage": 0.921
+    },
+    {
+      "group": "Dầm I  [Support beam]",
+      "n_elements": 140,
+      "n_points": 24976,
+      "coverage": 0.9156
+    },
+    {
+      "group": "KCPT_DAM NGANG_I24.54:DN_I24.54 - Đoạn giữa dầm:",
+      "n_elements": 192,
+      "n_points": 1920,
+      "coverage": 0.9073
+    },
+    {
+      "group": "KCPT_DAM NGANG_I24.54:DN_ I24.54 - Dâm biên - Đoạn đầu dầm:",
+      "n_elements": 64,
+      "n_points": 640,
+      "coverage": 0.9047
+    },
+    {
+      "group": "KCPT_DAM NGANG_I33:DN_I33 - Dầm biên -  Đoạn đầu dầm:",
+      "n_elements": 16,
+      "n_points": 160,
+      "coverage": 0.9
+    },
+    {
+      "group": "KCK_U CHONG XO_2:KCK_U CHONG XO_2:",
+      "n_elements": 48,
+      "n_points": 608,
+      "coverage": 0.8947
+    },
+    {
+      "group": "KCPT_DAM NGANG_I24.54:DN_ I24.54 - Dâm biên - Đoạn giữa dầm:",
+      "n_elements": 64,
+      "n_points": 640,
+      "coverage": 0.8797
+    },
+    {
+      "group": "Kết cấu K101  [Road-pier connector]",
+      "n_elements": 4,
+      "n_points": 800,
+      "coverage": 0.8762
+    },
+    {
+      "group": "KCK_U CHONG XO_1:KCK_U CHONG XO_1:",
+      "n_elements": 64,
+      "n_points": 640,
+      "coverage": 0.8734
+    },
+    {
+      "group": "KCK_GOI:KCK_GOI:",
+      "n_elements": 296,
+      "n_points": 2968,
+      "coverage": 0.8646
+    },
+    {
+      "group": "KCK_DA KE GOI:KCK_DA KE GOI:",
+      "n_elements": 224,
+      "n_points": 2240,
+      "coverage": 0.8451
+    },
+    {
+      "group": "Xà mũ  [Column cap]",
+      "n_elements": 20,
+      "n_points": 3276,
+      "coverage": 0.7738
+    },
+    {
+      "group": "KCK_U CHONG XO_3:KCK_U CHONG XO_3:",
+      "n_elements": 8,
+      "n_points": 256,
+      "coverage": 0.6602
+    },
+    {
+      "group": "Bản tấm lót  [Bottom slab]",
+      "n_elements": 39,
+      "n_points": 7220,
+      "coverage": 0.5051
+    },
+    {
+      "group": "Thân trụ  [Pier body]",
+      "n_elements": 24,
+      "n_points": 2720,
+      "coverage": 0.4835
+    },
+    {
+      "group": ":",
+      "n_elements": 1,
+      "n_points": 200,
+      "coverage": 0.395
+    },
+    {
+      "group": "Bê tông trụ  [Pier concrete]",
+      "n_elements": 26,
+      "n_points": 5200,
+      "coverage": 0.3727
+    }
+  ],
+  "summary": {
+    "built": 50,
+    "partial": 6,
+    "missing": 0,
+    "total_coverage_pct": 88.9
+  }
+}
