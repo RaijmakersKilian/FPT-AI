@@ -15,6 +15,7 @@ docker compose up --build
 Open **[http://localhost:8000](http://localhost:8000)** — done.
 
 > Docker connects to your existing PostgreSQL database. Use `host.docker.internal` instead of `localhost` in the `DATABASE_URL` so Docker can reach your local PostgreSQL:
+>
 > ```
 > DATABASE_URL=postgresql+psycopg://ftpai_user:password@host.docker.internal:5432/ftpai_db
 > ```
@@ -46,14 +47,14 @@ Use this if you cannot install Docker, or want to run the components separately.
 
 ## 1. System Requirements
 
-| Component | Minimum | Recommended |
-|-----------|---------|-------------|
-| OS | Windows 10 64-bit | Windows 11 64-bit |
-| RAM | 8 GB | 16 GB |
-| Disk | 10 GB free | 30 GB free |
-| Python | 3.10 | 3.10 – 3.12 |
-| GPU | — | NVIDIA GPU with CUDA 11.8+ (for SAM2/SAM3/COLMAP) |
-| PostgreSQL | 14 | 15 or 16 |
+| Component  | Minimum           | Recommended                                       |
+| ---------- | ----------------- | ------------------------------------------------- |
+| OS         | Windows 10 64-bit | Windows 11 64-bit                                 |
+| RAM        | 8 GB              | 16 GB                                             |
+| Disk       | 10 GB free        | 30 GB free                                        |
+| Python     | 3.10              | 3.10 – 3.12                                       |
+| GPU        | —                 | NVIDIA GPU with CUDA 11.8+ (for SAM2/SAM3/COLMAP) |
+| PostgreSQL | 14                | 15 or 16                                          |
 
 > The base system (backend + frontend + 3D viewer) runs without a GPU. A GPU is only needed for the optional deep-learning segmentation and 3D reconstruction tools.
 
@@ -73,13 +74,13 @@ Browser  →  http://127.0.0.1:8000
                 └── XR/         (coverage_result.ply, coverage_data.json)
 ```
 
-| Component | Technology | Purpose |
-|-----------|-----------|---------|
-| Frontend | HTML / CSS / JS / Three.js | Dashboard, 3D BIM viewer |
-| Backend | Python / FastAPI / Uvicorn | REST API, serves the frontend |
-| Database | PostgreSQL | Videos, runs, detections, reports |
-| XR / 3D | Python / ifcopenshell / Open3D | IFC → point cloud, coverage analysis |
-| AI Pipeline | Python / OpenCV | Keyframe extraction, damage detection |
+| Component   | Technology                     | Purpose                               |
+| ----------- | ------------------------------ | ------------------------------------- |
+| Frontend    | HTML / CSS / JS / Three.js     | Dashboard, 3D BIM viewer              |
+| Backend     | Python / FastAPI / Uvicorn     | REST API, serves the frontend         |
+| Database    | PostgreSQL                     | Videos, runs, detections, reports     |
+| XR / 3D     | Python / ifcopenshell / Open3D | IFC → point cloud, coverage analysis  |
+| AI Pipeline | Python / OpenCV                | Keyframe extraction, damage detection |
 
 ---
 
@@ -106,6 +107,7 @@ git --version
 Download from [postgresql.org/download/windows](https://www.postgresql.org/download/windows/).
 
 During installation:
+
 - Set a **superuser password** (you will need it in Step 2).
 - Leave the default port **5432**.
 
@@ -201,11 +203,13 @@ pip install -r requirements.txt
 ```
 
 > If you prefer an isolated environment:
+>
 > ```powershell
 > python -m venv .venv
 > .\.venv\Scripts\Activate.ps1
 > pip install -r requirements.txt
 > ```
+>
 > If PowerShell blocks scripts: `Set-ExecutionPolicy -ExecutionPolicy RemoteSigned -Scope CurrentUser`
 
 ### 6.2 Configure environment variables
@@ -244,6 +248,7 @@ python -m uvicorn app.main:app --reload
 Then open **[http://127.0.0.1:8000](http://127.0.0.1:8000)** in your browser.
 
 The dashboard loads automatically with:
+
 - The **3D BIM point cloud** coloured by coverage (green / orange / red)
 - The **Construction Inspector** showing coverage per bridge segment
 
@@ -314,6 +319,7 @@ pip install ifcopenshell trimesh numpy open3d scipy
 ```
 
 > If `pip install open3d` fails on Python 3.10, download the wheel from [github.com/isl-org/Open3D/releases](https://github.com/isl-org/Open3D/releases) and install it manually:
+>
 > ```powershell
 > pip install open3d-<version>-cp310-cp310-win_amd64.whl
 > ```
@@ -322,10 +328,10 @@ pip install ifcopenshell trimesh numpy open3d scipy
 
 Place the following files in `XR\IFC-TO-Cloud\`:
 
-| File | Description | Size |
-|------|-------------|------|
-| `Full_Build_Bridge.ifc` | BIM model | ~135 MB |
-| `mast3r_filtered.ply` | Filtered drone reconstruction | ~67 MB |
+| File                    | Description                   | Size    |
+| ----------------------- | ----------------------------- | ------- |
+| `Full_Build_Bridge.ifc` | BIM model                     | ~135 MB |
+| `mast3r_filtered.ply`   | Filtered drone reconstruction | ~67 MB  |
 
 > These large files are excluded from git. Obtain them from the project's shared drive.
 
@@ -422,35 +428,42 @@ FTP-AI/
 ## 12. Troubleshooting
 
 **`psql: command not found`**
+
 ```powershell
 $env:PATH += ";C:\Program Files\PostgreSQL\16\bin"
 ```
 
 **PostgreSQL service not running**
+
 ```powershell
 Start-Service -Name postgresql-x64-16
 ```
 
 **`ModuleNotFoundError` after pip install**
+
 ```powershell
 where python   # should point to the correct Python / venv
 ```
 
 **Backend returns 500 on startup**
+
 1. Check that `DATABASE_URL` in `backend\.env` is correct.
 2. Confirm PostgreSQL is running.
 3. Re-run the SQL schema from Step 2.
 
 **3D viewer shows grey model instead of point cloud**
+
 - Open the browser at `http://127.0.0.1:8000`, not via Live Server or a file path.
 - Check the browser console (F12) — the PLY endpoint should return 200.
 - Confirm `Frontend\coverage_result.ply` exists. If not, run the coverage analysis (Step 9.4).
 
 **Construction Inspector is empty**
+
 - Confirm `Frontend\coverage_data.json` exists.
 - Open `http://127.0.0.1:8000/api/coverage/data` in your browser — it should return JSON.
 
 **PowerShell script execution blocked**
+
 ```powershell
 Set-ExecutionPolicy -ExecutionPolicy RemoteSigned -Scope CurrentUser
 ```
@@ -460,4 +473,4 @@ Download the pre-built wheel from [github.com/isl-org/Open3D/releases](https://g
 
 ---
 
-*FTP-AI · GOT Bridge Monitoring Platform · June 2026*
+_FTP-AI · GOT Bridge Monitoring Platform · June 2026_

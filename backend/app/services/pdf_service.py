@@ -411,23 +411,8 @@ def build_report_pdf(enriched_report: dict[str, Any]) -> bytes:
 # File-system helpers
 # ---------------------------------------------------------------------------
 
-def get_output_dir() -> str:
-    """Return the configured PDF output directory."""
-    import os as _os
-    _os.makedirs("storage/reports_pdf", exist_ok=True)
-    return _os.environ.get("REPORT_OUTPUT_DIR", "storage/reports_pdf")
-
-
 def save_pdf(pdf_bytes: bytes, run_id: str, report_id: str) -> str:
-    """
-    Save PDF bytes to disk and return the absolute path.
-
-    Filename format: progress_report_{run_id}_{report_id}.pdf
-    """
-    output_dir = get_output_dir()
-    filename = f"progress_report_{run_id}_{report_id}.pdf"
-    filepath = os.path.join(output_dir, filename)
-    os.makedirs(output_dir, exist_ok=True)
-    with open(filepath, "wb") as f:
-        f.write(pdf_bytes)
-    return os.path.abspath(filepath)
+    """Upload PDF to Azure Blob Storage `reports/pdf/` folder; return public URL."""
+    from app.db.azure_storage import upload_blob, REPORTS_CONTAINER
+    blob_path = f"pdf/progress_report_{run_id}_{report_id}.pdf"
+    return upload_blob(REPORTS_CONTAINER, blob_path, pdf_bytes, "application/pdf")

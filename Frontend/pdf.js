@@ -1,7 +1,10 @@
 // PDF Preview — opens a modal showing the report layout.
-// Not yet connected to backend; data is read from the live DOM/API.
 (function () {
 const MONTH_SHORT = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+
+// Shared state so savePdf() can access data collected in openPdfPreview()
+let _lastTimelineEntries = [];
+let _lastInspectorRows   = [];
 
 function fmtDate(dateStr) {
   const [y, m, d] = dateStr.split('-');
@@ -236,6 +239,8 @@ function buildChartSVG(entries) {
 async function openPdfPreview() {
   let timelineEntries = [];
   let summary         = { built: 0, partial: 0, missing: 0 };
+  _lastTimelineEntries = [];
+  _lastInspectorRows   = [];
 
   // Capture 3D viewer snapshot
   const bimSnapshot = typeof window.getBimSnapshot === 'function'
@@ -271,6 +276,8 @@ async function openPdfPreview() {
     console.warn('PDF data laden mislukt:', e);
   }
 
+  _lastTimelineEntries = timelineEntries;
+  _lastInspectorRows   = inspectorRows;
   document.body.insertAdjacentHTML('beforeend', buildModal(timelineEntries, inspectorRows, summary, bimSnapshot, videoTitle));
 
   document.getElementById('pdf-close-btn').addEventListener('click', closePdfPreview);
@@ -293,10 +300,36 @@ async function loadScript(src) {
   });
 }
 
+function _stamp() {
+  const d = new Date();
+  return `${d.getFullYear()}${String(d.getMonth()+1).padStart(2,'0')}${String(d.getDate()).padStart(2,'0')}`;
+}
+
+function _triggerDownload(blob, filename) {
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url; a.download = filename; a.click();
+  setTimeout(() => URL.revokeObjectURL(url), 1000);
+}
+
+async function _uploadToAzure(blob, folder, filename) {
+  const path = `${folder}/${filename}`;
+  try {
+    const fd = new FormData();
+    fd.append('file', blob, path);
+    const res = await fetch('/reports/upload', { method: 'POST', body: fd });
+    if (!res.ok) console.warn('[report] Azure upload mislukt:', res.status);
+    else console.info('[report] Opgeslagen in Azure:', path);
+  } catch (e) {
+    console.warn('[report] Azure upload error:', e);
+  }
+}
+
+// ── PDF ───────────────────────────────────────────────────────────────────────
+
 async function savePdf() {
   const btn = document.getElementById('pdf-print-btn');
   if (btn) { btn.textContent = 'Saving…'; btn.disabled = true; }
-
   try {
     await loadScript('https://cdn.jsdelivr.net/npm/html2canvas@1.4.1/dist/html2canvas.min.js');
     await loadScript('https://cdn.jsdelivr.net/npm/jspdf@2.5.1/dist/jspdf.umd.min.js');
@@ -306,13 +339,11 @@ async function savePdf() {
 
     const { jsPDF } = window.jspdf;
     const pdf = new jsPDF({ orientation: 'portrait', unit: 'mm', format: 'a4' });
-
     const pageW = pdf.internal.pageSize.getWidth();
     const pageH = pdf.internal.pageSize.getHeight();
     const imgW  = pageW;
     const imgH  = (canvas.height / canvas.width) * pageW;
 
-    // Split across multiple pages if content is taller than one A4
     let yOffset = 0;
     while (yOffset < imgH) {
       if (yOffset > 0) pdf.addPage();
@@ -320,9 +351,9 @@ async function savePdf() {
       yOffset += pageH;
     }
 
-    const today = new Date();
-    const stamp = `${today.getFullYear()}${String(today.getMonth()+1).padStart(2,'0')}${String(today.getDate()).padStart(2,'0')}`;
-    pdf.save(`GOT_Bridge_XL8_Report_${stamp}.pdf`);
+    const filename = `GOT_Bridge_XL8_Report_${_stamp()}.pdf`;
+    pdf.save(filename);
+    await _uploadToAzure(pdf.output('blob'), 'pdf', filename);
   } catch (e) {
     console.error('PDF opslaan mislukt:', e);
     alert('PDF opslaan mislukt. Controleer de console.');
@@ -331,14 +362,56 @@ async function savePdf() {
   }
 }
 
-// Wire up EXPORT → PDF button
+// ── CSV ───────────────────────────────────────────────────────────────────────
+
+async function saveAsCsv() {
+  const rows = [
+    ['Date', 'Coverage %', 'Built', 'Partial', 'Missing'],
+    ..._lastTimelineEntries.map(e => [e.date, e.total_coverage_pct, e.built, e.partial, e.missing]),
+    [],
+    ['Element', 'Coverage %', 'Status'],
+    ..._lastInspectorRows.map(r => {
+      const pct = Math.round(r.pct * 100);
+      return [r.name, pct, r.pct >= 0.80 ? 'Built' : r.pct >= 0.30 ? 'Partial' : 'Missing'];
+    }),
+  ];
+  const csv = rows.map(r => r.join(',')).join('\r\n');
+  const blob = new Blob([csv], { type: 'text/csv' });
+  const filename = `GOT_Bridge_XL8_Report_${_stamp()}.csv`;
+  _triggerDownload(blob, filename);
+  await _uploadToAzure(blob, 'csv', filename);
+}
+
+// ── JSON ──────────────────────────────────────────────────────────────────────
+
+async function saveAsJson() {
+  const data = {
+    generated_at: new Date().toISOString(),
+    project: 'GOT Bridge XL8',
+    timeline: _lastTimelineEntries,
+    elements: _lastInspectorRows.map(r => ({
+      name: r.name,
+      coverage_pct: Math.round(r.pct * 100),
+      status: r.pct >= 0.80 ? 'Built' : r.pct >= 0.30 ? 'Partial' : 'Missing',
+    })),
+  };
+  const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
+  const filename = `GOT_Bridge_XL8_Report_${_stamp()}.json`;
+  _triggerDownload(blob, filename);
+  await _uploadToAzure(blob, 'json', filename);
+}
+
+// ── Wire up export buttons ────────────────────────────────────────────────────
+
 document.addEventListener('DOMContentLoaded', () => {
   document.querySelectorAll('.export-option').forEach(btn => {
-    if (btn.dataset.format === 'pdf') {
-      btn.addEventListener('click', e => {
-        e.stopPropagation();
-        openPdfPreview();
-      }, { once: false });
+    const fmt = btn.dataset.format;
+    if (fmt === 'pdf') {
+      btn.addEventListener('click', e => { e.stopPropagation(); openPdfPreview(); });
+    } else if (fmt === 'csv') {
+      btn.addEventListener('click', async e => { e.stopPropagation(); await saveAsCsv(); });
+    } else if (fmt === 'json') {
+      btn.addEventListener('click', async e => { e.stopPropagation(); await saveAsJson(); });
     }
   });
 });
