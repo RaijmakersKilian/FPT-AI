@@ -123,6 +123,12 @@
         wrap.querySelectorAll('.thumb').forEach((t) => t.classList.remove('active'));
         el.classList.add('active');
         playVideo(name);
+        const m = name.match(/(\d{2})(\d{2})(\d{4})/);
+        if (m) {
+          const dateKey = m[1] + m[2] + m[3];
+          if (typeof window.loadCoverage === 'function') window.loadCoverage(dateKey);
+          if (typeof window.loadCoverageData === 'function') window.loadCoverageData(dateKey);
+        }
       });
       wrap.appendChild(el);
     });
@@ -142,6 +148,17 @@
     const first = wrap && wrap.querySelector('.thumb');
     if (first) first.classList.add('active');
     playVideo(videos[0]);
+    // Load coverage PLY + inspector for the first video after viewer.js has initialized
+    const fm = videos[0].match(/(\d{2})(\d{2})(\d{4})/);
+    if (fm) {
+      const dateKey = fm[1] + fm[2] + fm[3];
+      if (typeof window.loadCoverageData === 'function') window.loadCoverageData(dateKey);
+      const tryLoad = () => {
+        if (typeof window.loadCoverage === 'function') window.loadCoverage(dateKey);
+      };
+      if (typeof window.loadCoverage === 'function') tryLoad();
+      else setTimeout(tryLoad, 1000);
+    }
     console.info(`[azure-data] loaded ${videos.length} video(s) from Azure`);
   }
 

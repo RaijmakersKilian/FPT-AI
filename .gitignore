@@ -9,3 +9,14 @@ Frontend/Video's/Copy of Kopie van AP 08-12-2025.MP4.mp4
 *.ifc
 *.claude
 *.mp4
+
+# Local secrets / config (contain keys, SAS tokens) - never commit
+Frontend/azure-config.js
+Frontend/supabase-config.js
+backend/.env
+.env
+
+# Python / editor noise
+__pycache__/
+*.py[cod]
+.claude/

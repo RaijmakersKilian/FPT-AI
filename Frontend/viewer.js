@@ -3,8 +3,12 @@ import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
 import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
 import { PLYLoader } from 'three/addons/loaders/PLYLoader.js';
 
-const DEFAULT_MODEL = 'KCPT_Ki_centered.glb';
-const COVERAGE_PLY  = '/api/coverage/pointcloud';
+const _az = window.AZURE_CONFIG || {};
+const _base = `https://${_az.account || 'fptstorageai'}.blob.core.windows.net/${_az.modelsContainer || '3dmodels'}`;
+const _sas  = _az.modelsSasToken ? `?${_az.modelsSasToken}` : '';
+
+const DEFAULT_MODEL = `${_base}/glb/KCPT_Ki_centered.glb${_sas}`;
+const COVERAGE_PLY  = `${_base}/coverage/coverage_colored.ply${_sas}`;
 
 const container = document.getElementById('bim-viewport');
 const canvas    = document.getElementById('bim-canvas');
@@ -79,7 +83,7 @@ async function initViewer() {
   }
 
   // Expose for thumbnails.js
-  window.loadCoverage = (dateKey) => loadCoveragePLY(`/api/coverage/pointcloud/${dateKey}`);
+  window.loadCoverage = (dateKey) => loadCoveragePLY(`${_base}/coverage/coverage_${dateKey}.ply${_sas}`);
 
   hidePlaceholder();
   setLoading(true);

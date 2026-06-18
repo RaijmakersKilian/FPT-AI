@@ -1,8 +1,9 @@
+import os
 import re
 from pathlib import Path
 
-from fastapi import APIRouter, HTTPException, Response
-from fastapi.responses import FileResponse, JSONResponse
+from fastapi import APIRouter, HTTPException, Response, UploadFile
+from fastapi.responses import FileResponse, JSONResponse, RedirectResponse
 
 router = APIRouter()
 
@@ -102,3 +103,32 @@ def coverage_pointcloud_by_date(date_key: str):
         filename=p.name,
         headers={"Cache-Control": "no-store"},
     )
+
+
+@router.post("/upload-ply")
+async def upload_ply(file: UploadFile, date_key: str | None = None):
+    """
+    Upload a PLY point cloud to Supabase Storage (3Dmodels bucket).
+
+    Returns the public URL. Optionally pass ?date_key=DDMMYYYY to include
+    the scan date in the storage path (e.g. coverage_18112023.ply).
+    """
+    from app.db.supabase_storage import upload_file as _upload
+
+    if not file.filename or not file.filename.lower().endswith(".ply"):
+        raise HTTPException(status_code=400, detail="Only .ply files are accepted")
+
+    data = await file.read()
+    bucket = os.getenv("SUPABASE_MODELS_BUCKET", "3Dmodels")
+
+    if date_key:
+        storage_path = f"pointclouds/coverage_{date_key}.ply"
+    else:
+        storage_path = f"pointclouds/{file.filename}"
+
+    try:
+        public_url = _upload(bucket, storage_path, data, "application/octet-stream")
+    except Exception as exc:
+        raise HTTPException(status_code=500, detail=f"Upload to Supabase failed: {exc}")
+
+    return {"url": public_url, "bucket": bucket, "path": storage_path}

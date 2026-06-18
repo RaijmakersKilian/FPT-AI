@@ -30,6 +30,7 @@ class ProgressReportCreate(BaseModel):
     completion_pct: Annotated[float | None, Field(ge=0, le=100)] = None
     current_stage: str | None = None
     pdf_path: str | None = None
+    csv_path: str | None = None
 
     _normalize_run_id: classmethod = field_validator("run_id")(lambda v: validate_uuid(v, "run_id"))
     _normalize_element_type_id: classmethod = field_validator("element_type_id")(lambda v: validate_uuid(v, "element_type_id"))
@@ -45,6 +46,7 @@ class ProgressReportUpdate(BaseModel):
     completion_pct: Annotated[float | None, Field(ge=0, le=100)] = None
     current_stage: str | None = None
     pdf_path: str | None = None
+    csv_path: str | None = None
     generated_at: datetime | None = None
 
     _normalize_run_id: classmethod = field_validator("run_id")(lambda v: validate_uuid(v, "run_id"))
@@ -62,6 +64,7 @@ class ProgressReportResponse(BaseModel):
     completion_pct: float | None = None
     current_stage: str | None = None
     pdf_path: str | None = None
+    csv_path: str | None = None
     generated_at: datetime | None = None
 
     @field_validator("completion_pct", mode="before")

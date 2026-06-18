@@ -1,21 +1,56 @@
-# FTP AI
+# FTP AI — Bridge Construction Progress (AI module)
 
-AI prototype for the FPT construction progress project. The scope is the GOT Bridge
-from the XL8 IFC file.
+Turn drone video of the GOT Bridge (XL8) into a 3D reconstruction and a
+per-section construction-progress estimate against the final bridge model.
 
-The pipeline follows the project brief:
+## What it does (the delivered pipeline)
 
-1. Extract representative keyframes from drone video.
-2. Stitch selected frames into a bridge panorama.
-3. Segment visible bridge regions.
-4. Classify segments into progress-related classes.
-5. Estimate section and overall progress.
-6. Export annotated images and a structured JSON report.
+```text
+drone video
+  -> SAM3 traffic masking
+  -> MASt3R-SLAM 3D reconstruction
+  -> clean point cloud
+  -> compare to the final bridge model (per-section "built %")
+  -> REPORT.md
+```
 
-This repository starts with a runnable baseline. It does not require SAM3, SAM2, or YOLO
-weights to prove the workflow: `classical` segmentation and rule-based
-classification are included as fallbacks. SAM3/SAM2/YOLO can be plugged in later through
-the interfaces in `src/ftp_ai/segmentation.py` and `src/ftp_ai/classification.py`.
+One command runs the whole thing (Windows `AI/.venv-sam3` + WSL MASt3R-SLAM —
+setup in `docs/INSTALLATION.md`):
+
+```powershell
+AI\.venv-sam3\Scripts\python.exe AI\scripts\run_bridge_ai_pipeline.py `
+  --video <video.mp4> `
+  --final-model AI\data\BridgePointcloud\coverage_result.ply `
+  --name <run_name>
+```
+
+Output: `AI/outputs/runs/<run_name>/` (REPORT.md, cleaned cloud, per-section
+comparison). Batch every dated video with `AI/scripts/run_all_videos.py` for a
+progress-over-time curve.
+
+## Read these first (the authoritative docs)
+
+- `docs/bridge_progress_monitor_report.md` — what was built, what worked, what was
+  parked, the limits, and the v0 -> v1 roadmap
+- `docs/INSTALLATION.md` — full setup (SAM3 + MASt3R-SLAM, two environments)
+- `docs/CLIENT_SUMMARY.md` — one-page summary for the client
+- `docs/method_comparison_table.md` — every method tried + results
+
+## Honest one-liner
+
+MASt3R-SLAM is the proven reconstruction method on this drone footage; SAM3
+segmentation cleans moving traffic before reconstruction. The limiting factor is
+the **data capture** (no camera pose / calibration), not the AI model.
+
+---
+
+# Research log
+
+Everything below is the record of individual experiments and CLI tools explored
+during the project — segmentation modes, panorama attempts, sparse 3D, COLMAP,
+Gaussian splatting, the 3D comparison, vSLAM. It is kept for reference; the
+**delivered system is the pipeline above**, and the panorama / classifier ideas
+mentioned below were tried and dropped (see the report for why).
 
 ## Setup
 

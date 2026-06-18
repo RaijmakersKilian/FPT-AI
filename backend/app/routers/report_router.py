@@ -1,4 +1,4 @@
-from fastapi import APIRouter, HTTPException, status
+from fastapi import APIRouter, HTTPException, UploadFile, status
 
 from app.schemas.report_schema import (
     ProgressReportCreate,
@@ -60,3 +60,13 @@ def delete_progress_report_endpoint(report_id: str):
             status_code=status.HTTP_404_NOT_FOUND,
             detail="Progress report not found",
         )
+
+
+@router.post("/upload")
+async def upload_report_file(file: UploadFile):
+    """Upload a PDF or CSV report file to Azure Blob Storage `reports` container."""
+    from app.db.azure_storage import upload_blob, REPORTS_CONTAINER
+    content = await file.read()
+    content_type = file.content_type or "application/octet-stream"
+    url = upload_blob(REPORTS_CONTAINER, file.filename, content, content_type)
+    return {"url": url, "filename": file.filename}
