@@ -16,6 +16,64 @@ and compares what is visually detected against the official 3D BIM model (IFC fi
 
 ---
 
+## Feasibility Verdict — Final Week (2026-06-16)
+
+> This section is the honest status after the full research effort. The detailed
+> plan below this point is the *original* idealized design; several parts of it
+> changed once we tested them on real data (see "How the plan changed"). The
+> authoritative AI write-up is `AI/docs/bridge_progress_monitor_report.md`.
+
+**Did we try our best?** Yes. We tested a broad set of approaches and documented
+why each worked or didn't: classical + SAM2/SAM3 segmentation, COLMAP
+photogrammetry, MASt3R-SLAM/vSLAM, Gaussian splatting, the point-cloud-vs-model
+comparison, a vision-only construction overlay, lifting 2D SAM masks onto the 3D
+cloud, and a construction-only SLAM test.
+
+**Is what the client wants doable right now?** Two honest halves:
+
+- **As a turnkey, automatic, survey-grade product from the footage we have — no.**
+  Casual top-view drone video without camera pose/calibration cannot yield
+  reliable, calibrated per-component progress today.
+- **As a proven capability — yes.** The full loop runs end to end: video → 3D
+  reconstruction → align to the final model → per-section coverage, across
+  multiple dated flights. The building blocks all work.
+
+**The key finding: the blocker is the data capture, not the AI.** Every approach
+hit the same wall — no known drone pose, no GPS/IMU, no calibration, no planned
+repeatable flight path, and a final model not split into named components. The
+construction-only SLAM test made this concrete: the AI isolated the construction
+perfectly, yet the reconstruction produced 0 points purely because the capture
+gives no pose for the camera to localise against
+(`AI/docs/construction_only_slam_testing.md`).
+
+**What would make it production-grade (the roadmap):**
+1. Planned, repeatable drone flights (fixed path, altitude, angle, multi-pass).
+2. Drone pose — Giada's Unity flight path and/or GPS/IMU — so localisation is
+   known and the background can be dropped *after* pose is fixed.
+3. Camera calibration (known intrinsics) for metric scale.
+4. The final BIM/IFC model split into named components/phases.
+5. A project-trained construction segmenter instead of open-vocabulary prompts.
+
+**One-line message for the client/teacher:** *the method is feasible and the
+pipeline works; the next investment is in controlled data capture (planned
+flights + pose), not in a different AI model.*
+
+### How the plan changed (this file vs. what was built)
+
+```text
+- Panoramic stitching (Stage 2a): does NOT work on drone fly-over footage
+  because of parallax. Replaced by MASt3R-SLAM 3D reconstruction.
+- YOLO26 classifier on SAM2 segments (Stage 2c): not built. We used SAM3
+  open-vocabulary text prompts (a demo, not a trained classifier) - a project-
+  trained detector remains the production recommendation.
+- Progress is measured by comparing the MASt3R-SLAM point cloud to the final
+  model point cloud (per-section coverage), not by per-frame 2D classification.
+- Actual code lives under AI/ (AI/src/ftp_ai, AI/scripts, AI/docs), not the
+  src/ai layout sketched below.
+```
+
+---
+
 ## Scope
 
 - **In scope:** GOT bridge only (IFC file XL8) — one bridge, visual progress tracking only
